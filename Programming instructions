@@ -5,13 +5,14 @@
 Each script, function, script, or library file should contain in its header the following information:
 
 # ----------------------------------------------------------------------------
-# Created By:   name_of_the_creator 
+# Created By: name_of_the_creator 
 # Created Date: year-month-date
 # Version = '1.0'
 # Revised: <date>	<developer> <description>
 #          <date>	<developer> <description>
-# Tested: <Confirm that the code function has been tested, unit-testing, etc., if relevant>
-# Copyright (C) 202x: Organization, Place
+# Tested:  <date> <describe to what degree the code has been tested; unit-testing, etc.>
+# 
+# Copyright (C) 202x: <organization>, <place>
 # Licensed under GPL-3.0-or-later
 # ---------------------------------------------------------------------------
 """ Details about the module and for what purpose it was built for"""  
