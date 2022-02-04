@@ -1,14 +1,15 @@
 ## Programming instructions.
 
-Please use the PEP 8 Style guide for good programming practice, found here: https://www.python.org/dev/peps/pep-0008/ 
+Please use the PEP 8 Style guide for good programming practice, found here: 
+https://www.python.org/dev/peps/pep-0008/ 
 
 
-Each script, function, script, or library file should contain in its header the following information:
+Each script or module should contain in its header the following information:
 
 # ----------------------------------------------------------------------------
-# This code is part of the MCSim_python toolbox and repository.
 # Created By: name_of_the_creator 
 # Created Date: year-month-date
+# Version = '1.0'
 # Revised: <date>	<developer> <description>
 #          <date>	<developer> <description>
 # Tested:  <date> <describe to what degree the code has been tested; unit-testing, etc.>
@@ -16,7 +17,29 @@ Each script, function, script, or library file should contain in its header the 
 # Copyright (C) 202x: <organization>, <place>
 # Licensed under GPL-3.0-or-later
 # ---------------------------------------------------------------------------
-""" Details about the module and for what purpose it was built for"""  
+"""
+Short description of module 
+Details about the module and for what purpose it was built for
+"""  
 # ---------------------------------------------------------------------------
 # Imports/dependencies
 # ---------------------------------------------------------------------------
+
+Each function within a module should be in the following format:
+
+def function(arg1,arg2): 
+    """ <description> 
+       Input 
+           arg: <description> 
+       Output 
+           out1: <description> 
+           out2: <description> 
+    """
+    # Created: <date>	<developer> <description>
+    # Tested: <date>	<developer> <description>  
+
+    return out1, out2
+
+NB: the text inside triple quotes appears as information about module/function
+when calling them from the terminal. Trailing whitespace at end of line 
+indicates line break, and is important for formatting. 
