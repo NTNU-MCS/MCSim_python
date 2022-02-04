@@ -9,7 +9,8 @@ The library includes functions and aggregated models for configuring more advanc
 
 Please include the following reference when you use the MCSim_python toolbox: 
 
-    MCSim_python. Norwegian University of Science and Technology (NTNU), Trondheim, Norway. Downloaded: [DATE]; software available at https://github.com/NTNU-MCS/MCSim_python.
+    MCSim_python. Norwegian University of Science and Technology (NTNU), Trondheim, Norway. Downloaded: [DATE]; 
+    software available at https://github.com/NTNU-MCS/MCSim_python.
 
 Please use the PEP 8 Style guide for good programming practice, found here: https://www.python.org/dev/peps/pep-0008/ 
 
