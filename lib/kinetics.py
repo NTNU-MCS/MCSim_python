@@ -4,7 +4,6 @@
 # This code is part of the MCSim_python toolbox and repository.
 # Created By: M. Marley
 # Created Date: 2022-02-04
-# Version = '1.0'
 # Revised: <date>	<developer> <description>
 #          <date>	<developer> <description>
 # Tested:  2022-02-04 M.Marley input/output relations for individual functions

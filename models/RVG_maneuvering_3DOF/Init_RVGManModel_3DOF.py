@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # This code is part of the MCSim_python toolbox and repository.
 # Created By: M. Marley
@@ -46,16 +45,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import kinematics as km
+import visualization as viz
 
 # =============================================================================
 # Load model module
 # =============================================================================
 import Module_RVGManModel_3DOF as model
-
-# =============================================================================
-# plotting parameters
-# =============================================================================
-figxy = [10,5] #figure size
 
 # =============================================================================
 # load model data
@@ -69,11 +64,11 @@ parA = pickle.load( open("data\\parA_RVG.pkl", "rb" ) )
 # simulation parameters
 # =============================================================================
 tmax=200
-dt=0.5 #logging time step
+dt=0.5 #time step
 tvec = np.linspace(0,tmax,int(tmax/dt)+1)
 
-Uc=np.array(0) #current speed
-betac = 0#np.pi/4#current direction
+Uc=np.array(0.5) #current speed
+betac = -np.pi/4#current direction
 parS = {'dt':dt, 'Uc': Uc, 'betac': betac} #dict containing simulation param
 
 # =============================================================================
@@ -124,55 +119,23 @@ thruststates = x_out[6:10,:]
 # =============================================================================
 # plot
 # =============================================================================
-fig=plt.figure(1,figsize=figxy, clear='True')
+
+
+figxy = [10,5] #figure size
+
+plt.figure(1,figsize=figxy, clear='True')
 plt.plot(eta[0,:],eta[1,:])
 plt.title('Trajectory')
 plt.xlabel('x [m]')
 plt.ylabel('y [m]')
 plt.axis('equal')
 
+titles = ['x position','y position','heading','surge velocity','sway velocity',
+           'yaw velocity','force thruster 1','azimuth angle thruster 1',
+           'force thruster 2','azimuth angle thruster 2']
+units = ['m','m','rad','m/s','m/s','rad/s','N','rad','N','rad']
+parP={'figsize':figxy,'titles':titles,'units':units}
 
-fig=plt.figure(2,figsize=figxy, clear='True')
-plt.plot(tvec,eta[2,:]*180/np.pi)
-plt.title('Yaw angle')
-plt.xlabel('Time [s]')
-plt.ylabel('[deg]')
-
-fig=plt.figure(3,figsize=figxy, clear='True')
-plt.plot(tvec,nu[0,:])
-plt.title('Surge velocity')
-plt.xlabel('Time [s]')
-plt.ylabel('[m/s]')
-
-fig=plt.figure(4,figsize=figxy, clear='True')
-plt.plot(tvec,nu[1,:])
-plt.title('Sway velocity')
-plt.xlabel('Time [s]')
-plt.ylabel('[m/s]')
-
-fig=plt.figure(5,figsize=figxy, clear='True')
-plt.plot(tvec,nu[2,:]*180/np.pi)
-plt.title('Yaw velocity')
-plt.xlabel('Time [s]')
-plt.ylabel('[deg/s]')
-
-fig=plt.figure(6,figsize=figxy, clear='True')
-plt.plot(tvec,thruststates[0,:])
-plt.plot(tvec,thruststates[2,:])
-plt.title('Thrust force')
-plt.xlabel('Time [s]')
-plt.ylabel('[N]')
-plt.legend(('Thruster 1','Thruster 2'))
+viz.plot_timeseries(tvec,x_out,parP)
 
 
-fig=plt.figure(7,figsize=figxy, clear='True')
-plt.plot(tvec,thruststates[1,:]*180/np.pi)
-plt.plot(tvec,thruststates[3,:]*180/np.pi)
-plt.title('Azimuth angle')
-plt.xlabel('Time [s]')
-plt.ylabel('[deg]')
-plt.legend(('Thruster 1','Thruster 2'))
-
-
-    
- 
