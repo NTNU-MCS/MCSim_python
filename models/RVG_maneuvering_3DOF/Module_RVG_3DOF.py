@@ -1,14 +1,27 @@
 # -*- coding: utf-8 -*-
+# ----------------------------------------------------------------------------
+# Created By: M. Marley
+# Created Date: 2022-02-04
+# Version = '1.0'
+# Revised: <date>	<developer> <description>
+#          <date>	<developer> <description>
+# Tested:  2022-02-04 input/output relations for individual functions
+# 
+# Copyright (C) 202x: <organization>, <place>
+# Licensed under GPL-3.0-or-later
+# ---------------------------------------------------------------------------
 """
-MCsim model library
-
-Created on: Jan 26 2022
-
-@author: M. Marley
+Library of functions for running the 3DOF RVG maneuvering model
 """
+# ---------------------------------------------------------------------------
+# Imports/dependencies: self-explanatory
+# ---------------------------------------------------------------------------
+
 
 import numpy as np
-import MClib as ml
+import kinematics as km
+import kinetics as kt
+import thrusters as th
 
     
 def dot_GunMan3_lq(x,u,w,parV,parA,parS):
