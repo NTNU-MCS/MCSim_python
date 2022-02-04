@@ -6,9 +6,9 @@ Please use the PEP 8 Style guide for good programming practice, found here: http
 Each script, function, script, or library file should contain in its header the following information:
 
 # ----------------------------------------------------------------------------
+# This code is part of the MCSim_python toolbox and repository.
 # Created By: name_of_the_creator 
 # Created Date: year-month-date
-# Version = '1.0'
 # Revised: <date>	<developer> <description>
 #          <date>	<developer> <description>
 # Tested:  <date> <describe to what degree the code has been tested; unit-testing, etc.>
