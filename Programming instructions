@@ -1,5 +1,6 @@
-# Programming instructions.
+## Programming instructions.
 
+Please use the PEP 8 Style guide for good programming practice, found here: https://www.python.org/dev/peps/pep-0008/ 
 
 
 Each script, function, script, or library file should contain in its header the following information:
