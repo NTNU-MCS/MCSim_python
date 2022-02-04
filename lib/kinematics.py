@@ -7,7 +7,7 @@
 # Version = '1.0'
 # Revised: <date>	<developer> <description>
 #          <date>	<developer> <description>
-# Tested:  2022-02-04 input/output relations for individual functions
+# Tested:  2022-02-04 M.Marley input/output relations for individual functions
 # 
 # Copyright (C) 202x: <organization>, <place>
 # Licensed under GPL-3.0-or-later
@@ -21,6 +21,9 @@ Library of kinematics functions
 
 import numpy as np
 
+# =============================================================================
+# Functions
+# =============================================================================
 def rad2pipi(angle): 
     """Maps angle to [-pi,pi] 
        Input 

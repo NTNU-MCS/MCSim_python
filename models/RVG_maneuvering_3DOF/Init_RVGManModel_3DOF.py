@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+# ----------------------------------------------------------------------------
+# This code is part of the MCSim_python toolbox and repository.
+# Created By: M. Marley
+# Created Date: 2022-02-04
+# Revised: <date>	<developer> <description>
+#          <date>	<developer> <description>
+# Tested:  2022-02-04 M.Marley Checked that results make sense
+# 
+# Copyright (C) 202x: <organization>, <place>
+# Licensed under GPL-3.0-or-later
+# ---------------------------------------------------------------------------
 """
 Initialize example simulation of 3DOF RVG maneuvering model moving in
 uniform and steady currents, using a linear+quadratic damping formulation
@@ -10,50 +22,48 @@ Example simulation uses a PD-controller to maintain constant heading for 50sec,
 before executing a hard turn  
 
 Control inputs are the commanded thruster states: force and angle of the
-two azimuth thrusters. simple 1st order model used for actuator dynamics
-
-Created on: Jan 31 2022
-
-@author: M. Marley
+two azimuth thrusters. Simple 1st order model used for actuator dynamics
 """
+# ---------------------------------------------------------------------------
+# Imports/dependencies: used together with Module_RVG_3DOF
+# ---------------------------------------------------------------------------
 
-#Load modules
+# =============================================================================
+# Set path
+# =============================================================================
 import os
 from pathlib import Path
 import sys
 
-par_path = str(Path(os.path.dirname(__file__)).parents[0])  
-file_path = par_path + '\\ModelData\\'
-library_path = par_path + '\\Modules'
+par_path = str(Path(os.path.dirname(__file__)).parents[1])  
+library_path = par_path + '\\lib'
 sys.path.append(library_path)
 
+# =============================================================================
+# Load general modules
+# =============================================================================
 import matplotlib.pyplot as plt
 import numpy as np
-import MClib as ml
-import MCmod as mm
 import pickle
+import kinematics as km
+
+# =============================================================================
+# Load model module
+# =============================================================================
+import Module_RVGManModel_3DOF as model
 
 # =============================================================================
 # plotting parameters
 # =============================================================================
 figxy = [10,5] #figure size
 
-
 # =============================================================================
 # load model data
 # =============================================================================
 #vessel data
-parV = pickle.load( open(file_path+ "parV_RVG3DOF.pkl", "rb" ) )
+parV = pickle.load( open("data\\parV_RVG3DOF.pkl", "rb" ) )
 #actuator data
-parA = pickle.load( open(file_path+ "parA_RVG.pkl", "rb" ) )
-
-
-# =============================================================================
-# Control parameters
-# =============================================================================
-Kp = 1 #heading proportional gain
-Kd = 20 #heading derivative gain
-
+parA = pickle.load( open("data\\parA_RVG.pkl", "rb" ) )
 
 # =============================================================================
 # simulation parameters
@@ -65,10 +75,16 @@ tvec = np.linspace(0,tmax,int(tmax/dt)+1)
 Uc=np.array(0) #current speed
 betac = 0#np.pi/4#current direction
 parS = {'dt':dt, 'Uc': Uc, 'betac': betac} #dict containing simulation param
+
+# =============================================================================
+# Control parameters
+# =============================================================================
+Kp = 1 #heading proportional gain
+Kd = 20 #heading derivative gain
+
 Uref=parV['reference_velocity']
 thrustforce = parV['Dl'][0,0]*Uref+parV['Du'][0,0]*Uref**2
 psiref=0
-
 
 # =============================================================================
 # Initial conditions and allocate memory
@@ -89,7 +105,7 @@ for i1, t in enumerate(tvec):
     x_out[:,i1] = x
     
     #control system (same azimuth angle for both thrusters)
-    azi_d = Kp*(ml.rad2pipi(x[2]-psiref))+Kd*x[5]
+    azi_d = Kp*(km.rad2pipi(x[2]-psiref))+Kd*x[5]
     azi_d = np.max([np.min([azi_d,np.pi/6]),-np.pi/6]) 
     if t>=50:
         azi_d = np.pi/6 #execute evasive manuever
@@ -98,7 +114,7 @@ for i1, t in enumerate(tvec):
     
     #time integration
     Fw = np.zeros(3) #no disturbance force
-    x = mm.int_RVGMan3_lq(x, thrust_d, Fw, parV, parA, parS)
+    x = model.int_RVGMan3_lq(x, thrust_d, Fw, parV, parA, parS)
   
 #sort output
 eta=x_out[0:3,:]
