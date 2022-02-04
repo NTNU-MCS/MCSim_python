@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
+# This code is part of the MCSim_python toolbox and repository.
 # Created By: M. Marley
 # Created Date: 2022-02-04
-# Version = '1.0'
 # Revised: <date>	<developer> <description>
 #          <date>	<developer> <description>
 # Tested:  2022-02-04 input/output relations for individual functions
@@ -11,7 +11,9 @@
 # Licensed under GPL-3.0-or-later
 # ---------------------------------------------------------------------------
 """
-Library of functions for running the 3DOF RVG maneuvering model
+Library of functions for running the 3DOF RVG maneuvering model. 
+May also be used to model any vessel with two azimuth thrusters, by loading
+desired vessel and actuator data. 
 """
 # ---------------------------------------------------------------------------
 # Imports/dependencies: self-explanatory
