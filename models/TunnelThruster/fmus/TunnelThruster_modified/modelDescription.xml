@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription modelName="TunnelThruster" modelIdentifier="sintefjfmu" description="" guid="35d2cdbd-4ff4-4f4c-ac4b-b7badeacbcba" fmiVersion="1.0" numberOfContinuousStates="0" numberOfEventIndicators="0" generationDateAndTime="2019-06-21T09:44:47.500+01:00">
+  <VendorAnnotations>
+    <Tool name="sintef-jfmi">
+      <Annotation name="className" value="no.marintek.simulator.fmu.propulsionlibraryfmu.PropulsionLibraryFmu"/>
+    </Tool>
+  </VendorAnnotations>
+  <ModelVariables>
+    <ScalarVariable name="input_x_rel_ap" valueReference="0" description="X-position rel. AP (positive forward)" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="100001.0" max="100001.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_y_rel_cl" valueReference="1" description="Y-position rel. CL (positive starboard)" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="100002.0" max="100002.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_z_rel_bl" valueReference="2" description="Z-position rel. BL (positive up)" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="-100.0" max="100.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_tunl_length" valueReference="3" description="Tunnel length" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="0.0" max="100.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_prop_diam" valueReference="4" description="Propeller diameter" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="0.0" max="100.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_max_pitch" valueReference="5" description="Propeller pitch" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="-" relativeQuantity="false" min="-1.5" max="1.5" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_hull_angle_front_view" valueReference="6" description="Hull angle (front view)" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="deg" relativeQuantity="false" min="0.0" max="90.0" nominal="1.0" start="65.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_hull_angle_top_view" valueReference="7" description="Hull angle (top view)" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="deg" relativeQuantity="false" min="0.0" max="90.0" nominal="1.0" start="20.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_distancetohull" valueReference="8" description="Vertical distance from propeller centre to hull (0.0 for units mounted inside the hull)" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="0.0" max="999.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_bilgeradius" valueReference="9" description="Bilge radius" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="0.0" max="999.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_rho" valueReference="10" description="Water density" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="kg/m³" relativeQuantity="false" min="900.0" max="1100.0" nominal="1.0" start="1025.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_lpp" valueReference="11" description="Ship length between perpendiculars" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="0.0" max="10000.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_water_depth" valueReference="12" description="Water depth" variability="parameter" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="0.0" max="10000.0" nominal="1.0" start="999.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_act_revs" valueReference="13" description="Propeller Revs" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="rpm" relativeQuantity="false" min="-1000.0" max="1000.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_cg_surge_vel" valueReference="14" description="Ship Velocity Surge" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="m/s" relativeQuantity="false" min="-100.0" max="100.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_cg_sway_vel" valueReference="15" description="Ship Velocity Sway" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="m/s" relativeQuantity="false" min="-100.0" max="100.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_yaw_vel" valueReference="16" description="Ship Velocity Yaw" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="deg/s" relativeQuantity="false" min="-100.0" max="100.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_cur_surge_vel" valueReference="17" description="Longitudinal Current Velocity" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="m/s" relativeQuantity="false" min="-100.0" max="100.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_cur_sway_vel" valueReference="18" description="Lateral Current Velocity" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="m/s" relativeQuantity="false" min="-100.0" max="100.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_cg_x_rel_ap" valueReference="19" description="x-position of CG rel AP (pos. fwd)" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="-1.7976931348623157E308" max="1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_cg_y_rel_cl" valueReference="20" description="y-position of CG rel CL (pos. starboard)" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="-1.7976931348623157E308" max="1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_cg_z_rel_bl" valueReference="21" description="z-position of CG rel BL (pos. up)" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="-1.7976931348623157E308" max="1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_torque_loss_factor" valueReference="22" description="Torque loss factor. 0 = no loss" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="" relativeQuantity="false" min="0.0" max="1.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_thrust_loss_factor" valueReference="23" description="Thrust loss factor. 0 = no loss" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="" relativeQuantity="false" min="0.0" max="1.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_load_percent" valueReference="24" description="Load percentage of the propulsor actuator" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="%" relativeQuantity="false" min="0.0" max="100.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_submergence" valueReference="25" description="Propulsor submergence" variability="continuous" causality="input" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="-1.7976931348623157E308" max="1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_force_surge" valueReference="26" description="Surge force" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="N" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_force_sway" valueReference="27" description="Sway force" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="N" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_force_heave" valueReference="28" description="Heave force" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="N" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_x_rel_ap" valueReference="29" description="X-position rel. AP (positive forward)" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_y_rel_cl" valueReference="30" description="Y-position rel. CL (positive starboard)" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_z_rel_bl" valueReference="31" description="Z-position rel. BL (positive up)" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_force_surge_nominal" valueReference="32" description="Surge force (without loss effects)" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="N" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_force_sway_nominal" valueReference="33" description="Sway force (without loss effects)" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="N" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_force_heave_nominal" valueReference="34" description="Heave force (without loss effects)" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="N" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_submergence" valueReference="35" description="Submergence from wave surface" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_revs" valueReference="36" description="Revs" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="rpm" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_torque_nominal" valueReference="37" description="Torque (without loss effects)" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="Nm" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_torque" valueReference="38" description="Torque" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="Nm" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_power_nominal" valueReference="39" description="Power (without loss effects)" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="W" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_power" valueReference="40" description="Power" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="W" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_thrust" valueReference="41" description="Propeller Thrust" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="N" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_thrust_nominal" valueReference="42" description="Propeller Thrust" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="N" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_propracedir" valueReference="43" description="Propeller Race Direction" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="deg" relativeQuantity="false" min="-1.7976931348623157E308" max="-1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_prop_diam" valueReference="44" description="Propeller diameter" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="0.0" max="1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_bilgeradius" valueReference="45" description="Bilge radius" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="0.0" max="1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_distancetohull" valueReference="46" description="Vertical distance from propeller centre to hull (0.0 for units mounted inside the hull)" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="m" relativeQuantity="false" min="0.0" max="1.7976931348623157E308" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_load_percent" valueReference="47" description="Load percentage of the propulsor actuator" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="%" relativeQuantity="false" min="0.0" max="100.0" nominal="1.0" start="0.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_pitch" valueReference="48" description="Propeller pitch" variability="continuous" causality="output" alias="noAlias">
+      <Real unit="" relativeQuantity="false" min="-1.7976931348623157E308" max="1.7976931348623157E308" nominal="1.0" start="1.0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_num_grids" valueReference="0" description="Number of grids" variability="parameter" causality="input" alias="noAlias">
+      <Integer min="0" max="10" start="0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_propulsor_type" valueReference="1" description="Propulsor Type" variability="continuous" causality="output" alias="noAlias">
+      <Integer min="-2147483647" max="2147483647" start="0" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_is_main_propulsion" valueReference="0" description="Specifies whether propulsor is main propulsion or not. Not used internally" variability="parameter" causality="input" alias="noAlias">
+      <Boolean start="false" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="input_enabled" valueReference="1" description="Specifies whether propulsor is enabled or not. Not used internally" variability="continuous" causality="input" alias="noAlias">
+      <Boolean start="true" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_is_main_propulsion" valueReference="2" description="Specifies whether propulsor is main propulsion or not. Not used internally" variability="continuous" causality="output" alias="noAlias">
+      <Boolean start="false" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="output_enabled" valueReference="3" description="Specifies whether propulsor is enabled or not. Not used internally" variability="continuous" causality="output" alias="noAlias">
+      <Boolean start="true" fixed="false"/>
+    </ScalarVariable>
+    <ScalarVariable name="propulsorInputDataFolder" valueReference="0" description="Path to folder containing input files for propulsors" variability="parameter" causality="input" alias="noAlias">
+      <String start="%fmu%/resources/" fixed="false"/>
+    </ScalarVariable>
+  </ModelVariables>
+  <Implementation>
+    <CoSimulation_StandAlone>
+      <Capabilities/>
+    </CoSimulation_StandAlone>
+  </Implementation>
+</fmiModelDescription>
