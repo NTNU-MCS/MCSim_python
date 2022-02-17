@@ -72,14 +72,14 @@ def dot_RVG_Man_3DOF_lq(x,u,w,parV,parA,parS):
     ForceAct = th.forceAzi3(x[6],x[7],parA['rt1']) 
     ForceAct = ForceAct+th.forceAzi3(x[8],x[9],parA['rt2'])
     F=ForceAct+w
+
+    dx = np.zeros(len(x))
+    dx[0:3] = km.dot_eta3(psi, nu)
     
-    dot_x = np.zeros(len(x))
-    dot_x[0:3] = km.dot_eta3(psi, nu)
-    
-    dot_x[3:6] = kt.dot_nu3_man_lq(psi, nu,parS['Uc'],parS['betac'], F, parV)
-    dot_x[6:8] = -parA['T']@(x[6:8]-u[0:2])
-    dot_x[8:10] = -parA['T']@(x[8:10]-u[2:4])
-    return dot_x
+    dx[3:6] = kt.dot_nu3_man_lq(psi, nu,parS['Uc'],parS['betac'], F, parV)
+    dx[6:8] = -parA['T']@(x[6:8]-u[0:2])
+    dx[8:10] = -parA['T']@(x[8:10]-u[2:4])
+    return dx
 
 
 def int_RVGMan3_lq(x,u,w,parV,parA,parS):

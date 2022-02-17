@@ -68,12 +68,11 @@ def dot_nu3_man_lq(psi,nu,Uc,betaC,F,parV):
     invM = np.linalg.inv(Mrb+Ma)
     nu_c_n = Uc*np.array([np.cos(betaC),np.sin(betaC),0]) #inertial frame current velocity
     nu_c = np.transpose(km.Rotz(psi))@nu_c_n #body-fixed current velocity
-    S=np.array([[0, -1, 0],[1, 0, 0],[0, 0, 1]])
     S=km.Smat(np.array([0,0,nu[2]]))
     dnu_c = np.transpose(S@km.Rotz(psi))@nu_c_n
     nu_r = nu-nu_c
     
-    D=Dl+Du*abs(nu[0])+Dv*abs(nu[1])+Dr*abs(nu[2])
+    D=Dl+Du*abs(nu_r[0])+Dv*abs(nu_r[1])+Dr*abs(nu[2])
     Ca = Cor3(nu_r,Ma)
     Crb = Cor3(nu,Mrb)
     
