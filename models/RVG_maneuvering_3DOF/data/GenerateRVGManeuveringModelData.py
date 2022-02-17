@@ -1,4 +1,15 @@
 # -*- coding: utf-8 -*-
+# ----------------------------------------------------------------------------
+# This code is part of the MCSim_python toolbox and repository.
+# Created By: M. Marley
+# Created Date: 2022-02-04
+# Revised: <date>	<developer> <description>
+#          <date>	<developer> <description>
+# Tested:  2022-02-04 M.Marley 
+# 
+# Copyright (C) 202x: <organization>, <place>
+# Licensed under GPL-3.0-or-later
+# ---------------------------------------------------------------------------
 """
 This script prepares model data for Gunnerus maneuvering models
 
@@ -8,29 +19,19 @@ for example purposes only.
 
 Gunnerus has two azimuth thrusters.Thruster location crudely estimated from 
 drawings, dynamic time constants are a (somewhat qualified) guess. 
-
-Created on: Jan 31 2022
-
-@author: M. Marley
 """
 
 #Load modules
 import numpy as np
 import scipy.io
 import pickle
-import os
-from pathlib import Path
-
-# set path to model data
-par_path = str(Path(os.path.dirname(__file__)).parents[0])  
-file_path = par_path + '\\ModelData\\'
 
 # =============================================================================
 # 6DOF vessel parameters from VERES, extracted using matlab
 # =============================================================================
 file_name = 'RVGManModelParam6DOF.mat'
 
-vessel= scipy.io.loadmat(file_path+file_name)
+vessel= scipy.io.loadmat(file_name)
 L = vessel['Lpp'] #length between perpendiculars
 B = vessel['Bm'] #Breadth middle
 T = vessel['Tm'] #Draught middle
@@ -84,12 +85,12 @@ parA = {'rt1':rt1,'rt2':rt2,'T':T}
 # Store data
 # =============================================================================
 #store 6DOF vessel data
-f = open(file_path+"parV_RVG6DOF.pkl","wb")
+f = open("parV_RVG6DOF.pkl","wb")
 pickle.dump(parV,f)
 f.close()
 
 #store actuator data
-f = open(file_path+"parA_RVG.pkl","wb")
+f = open("parA_RVG.pkl","wb")
 pickle.dump(parA,f)
 f.close()
 
@@ -102,7 +103,7 @@ parV = {'Mrb':Mrb[DOF3mat],'Ma':Ma[DOF3mat],
         'Dl':Dl[DOF3mat],'Du':Du[DOF3mat],
         'Dv':Dv[DOF3mat], 'Dr':Dr[DOF3mat],
         'reference_velocity':reference_velocity} #save in dict structure
-f = open(file_path+"parV_RVG3DOF.pkl","wb")
+f = open("parV_RVG3DOF.pkl","wb")
 pickle.dump(parV,f)
 f.close()
 
