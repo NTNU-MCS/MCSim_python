@@ -1,12 +1,5 @@
 import numpy as np
 import math
-import matplotlib.pyplot as plt
-import shutil
-
-import fmpy
-from fmpy import *
-from fmpy.fmi1 import FMU1Slave
-from fmpy.util import plot_result, download_test_file
 
 class vesselmodel():
 
@@ -17,12 +10,36 @@ class vesselmodel():
     def __init__(self, h):
 
         self.h = h
+
+        """
+        Parameters
+        ------------
+        m : float (kg)
+            Ship mass
+        x_g : float (m) 
+            Position of gravity centre in the x direction of the body-fixed coordinate system.
+        L_pp : float (m)
+            Length between perpendiculars
+        I_z : float (kgm2)
+            The inertia moment about the vertical axis.
+        dens : float (kg/m3)
+            The density of water
+        ly : float (m)
+            absolute y position of the azimuth thrusters from the center line.
+        lx : float (m)
+            longitudinal distance from the azimuth thrusters to the center of gravity.
+        bow_x_rel_ap : float (m)
+            longitudinal distance from the bow thruster to A.P.
+        """
+
         self.m = 0.41093181E+06
         self.x_g = 0.0
         self.L_pp = 28.9
         self.I_z = 0.21450896E+08
         self.dens = 1025
-        self.cg_x_rel_ap = -13.228043 + self.x_g # it has to be checked.
+        self.ly = 2.7
+        self.lx = 13.22
+        self.bow_x_rel_ap = 31.5
 
         Xudot = -79320.5895
         Yvdot = -408192.6004
@@ -157,23 +174,18 @@ class vesselmodel():
 
         return np.array([[X, Y, N]]).T
 
-    def ForceAzimuth(self, u, v, r, revs, angle, ps):
-
-        if ps == 'P':
-            ly = 2.7
-        elif ps == 'S':
-            ly = -2.7
+    def ForceAzimuth(self, u, v, r, revs, angle, ly):
 
         lx = 13.22
-        l = np.sqrt(lx ** 2 + ly ** 2)
+        l = np.sqrt(self.lx ** 2 + ly ** 2)
         sint = ly / l
-        cost = lx / l
+        cost = self.lx / l
 
         # constant values
         self.fmu.setReal([self.input_x_rel_ap], [0.0])
         self.fmu.setReal([self.input_y_rel_cl], [ly])
         self.fmu.setReal([self.input_z_rel_bl], [0.55])
-        self.fmu.setReal([self.input_cg_x_rel_ap], [13.22])  # needs to be checked
+        self.fmu.setReal([self.input_cg_x_rel_ap], [self.lx])
         self.fmu.setReal([self.input_cg_y_rel_cl], [0.0])
         self.fmu.setReal([self.input_cg_z_rel_bl], [3.624001])
         self.fmu.setReal([self.input_prop_diam], [1.9])
@@ -202,7 +214,7 @@ class vesselmodel():
 
         Fx = 0.0
         Fy = - (3.15982607e-04*self.tun_revs**3 + 1.23363612e-03*self.tun_revs**2 + 5.17642375e+00*self.tun_revs)
-        Nz = Fy * (31.5 - 13.228043) # Bow thruster is located in the bow. If Fy is positive, Nz should be positive.
+        Nz = Fy * (self.bow_x_rel_ap - self.lx) # Bow thruster is located in the bow. If Fy is positive, Nz should be positive.
 
         return np.array([[Fx, Fy, Nz]]).T
 
@@ -222,8 +234,8 @@ class vesselmodel():
         F_h = self.HydrodynamicForces(u=u, v=v, r=r)
         F_RBCC = self.RBCC_Forces(u=u, v=v, r=r)
         F_w = self.WindForces(psi=psi)
-        F_AzimuthP = self.ForceAzimuth(u=u, v=v, r=r, revs=self.p_revs, angle=self.p_angle, ps='P')
-        F_AzimuthS = self.ForceAzimuth(u=u, v=v, r=r, revs=self.s_revs, angle=self.s_angle, ps='S')
+        F_AzimuthP = self.ForceAzimuth(u=u, v=v, r=r, revs=self.p_revs, angle=self.p_angle, ly=self.ly)
+        F_AzimuthS = self.ForceAzimuth(u=u, v=v, r=r, revs=self.s_revs, angle=self.s_angle, ly=-self.ly)
         F_Tunnel = self.ForceTunnel()
 
         F_total = F_h + F_w + F_RBCC + F_AzimuthP + F_AzimuthS + F_Tunnel
