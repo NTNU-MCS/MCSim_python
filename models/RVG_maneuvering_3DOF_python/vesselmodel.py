@@ -157,11 +157,21 @@ class vesselmodel():
 
         return np.array([[X, Y, N]]).T
 
-    def ForceAzimuth(self, u, v, r, revs, angle):
+    def ForceAzimuth(self, u, v, r, revs, angle, ps):
+
+        if ps == 'P':
+            ly = 2.7
+        elif ps == 'S':
+            ly = -2.7
+
+        lx = 13.22
+        l = np.sqrt(lx ** 2 + ly ** 2)
+        sint = ly / l
+        cost = lx / l
 
         # constant values
         self.fmu.setReal([self.input_x_rel_ap], [0.0])
-        self.fmu.setReal([self.input_y_rel_cl], [2.7])
+        self.fmu.setReal([self.input_y_rel_cl], [ly])
         self.fmu.setReal([self.input_z_rel_bl], [0.55])
         self.fmu.setReal([self.input_cg_x_rel_ap], [13.22])  # needs to be checked
         self.fmu.setReal([self.input_cg_y_rel_cl], [0.0])
@@ -184,34 +194,39 @@ class vesselmodel():
         self.globaltime = self.globaltime + self.h
 
         Fx, Fy = self.fmu.getReal([self.output_force_surge, self.output_force_sway])
-        Nz = Fy * self.cg_x_rel_ap
-
-        # error detection
-        if np.isnan(Fx) + np.isnan(Fy) + np.isinf(Fx) + np.isinf(Fy) > 0:
-            print('Thruster calculation serious error')
-            print('Fx:%.f Fy:%.f' % (Fx, Fy))
-            print('revs:%f angle:%f u:%f v:%f yawvel:%f' % (revs, angle, u, v, r))
-            input()
+        Nz = - l * (Fx * sint + Fy * cost)
 
         return np.array([[Fx, Fy, Nz]]).T
 
-    def odefun(self, x):
+    def ForceTunnel(self):
 
-        psi = x[2]
-        u = x[3]
-        v = x[4]
-        r = x[5]
+        Fx = 0.0
+        Fy = - (3.15982607e-04*self.tun_revs**3 + 1.23363612e-03*self.tun_revs**2 + 5.17642375e+00*self.tun_revs)
+        Nz = Fy * (31.5 - 13.228043) # Bow thruster is located in the bow. If Fy is positive, Nz should be positive.
+
+        return np.array([[Fx, Fy, Nz]]).T
+
+    def odefun(self):
+
+        psi = self.x0[2]
+        u = self.x0[3]
+        v = self.x0[4]
+        r = self.x0[5]
 
         res = np.zeros(6)
 
-        res[0:3] = np.array([x[3]*math.cos(x[2])-x[4]*math.sin(x[2]), x[3]*math.sin(x[2])+x[4]*math.cos(x[2]), x[5]]).T
+        res[0:3] = np.array([self.x0[3]*math.cos(self.x0[2])-self.x0[4]*math.sin(self.x0[2]),
+                             self.x0[3]*math.sin(self.x0[2])+self.x0[4]*math.cos(self.x0[2]),
+                             self.x0[5]]).T
 
-        F_h = self.HydrodynamicForces(u, v, r)
-        F_RBCC = self.RBCC_Forces(u, v, r)
-        F_w = self.WindForces(psi)
-        F_a = self.ForceAzimuth(u, v, r, revs=self.revs, angle=self.angle)
+        F_h = self.HydrodynamicForces(u=u, v=v, r=r)
+        F_RBCC = self.RBCC_Forces(u=u, v=v, r=r)
+        F_w = self.WindForces(psi=psi)
+        F_AzimuthP = self.ForceAzimuth(u=u, v=v, r=r, revs=self.p_revs, angle=self.p_angle, ps='P')
+        F_AzimuthS = self.ForceAzimuth(u=u, v=v, r=r, revs=self.s_revs, angle=self.s_angle, ps='S')
+        F_Tunnel = self.ForceTunnel()
 
-        F_total = F_h + F_w + 2 * F_a + F_RBCC
+        F_total = F_h + F_w + F_RBCC + F_AzimuthP + F_AzimuthS + F_Tunnel
 
         res[3:6] = (np.linalg.inv(self.M) @ F_total).flatten()
 
@@ -245,8 +260,11 @@ class vesselmodel():
                  globaltime,
                  fmu,
                  vrs,
-                 angle,
-                 revs,
+                 p_angle,
+                 p_revs,
+                 s_angle,
+                 s_revs,
+                 tun_revs,
                  V_w,
                  beta_w):
 
@@ -254,14 +272,17 @@ class vesselmodel():
         self.globaltime = globaltime
         self.fmu = fmu
         self.vrs = vrs
-        self.angle = angle
-        self.revs = revs
+        self.p_angle = p_angle
+        self.p_revs = p_revs
+        self.s_angle = s_angle
+        self.s_revs = s_revs
+        self.tun_revs = tun_revs
         self.V_w = V_w
         self.beta_w = beta_w
 
         self.fmusetparameters()
 
-        acc = self.odefun(self.x0)
+        acc = self.odefun()
         x = self.x0 + self.h * acc
 
         return x, self.globaltime

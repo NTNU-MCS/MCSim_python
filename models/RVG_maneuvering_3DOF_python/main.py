@@ -50,11 +50,14 @@ if __name__ == '__main__':
         Initial yaw velocity.
     nph: int (-)
         The number of time steps for numerical integration.
-    revs: float array - length nph (rpm)
-        Azimuth thruster revolution over the prediction horizon.
+    p,s_revs: float array - length nph (rpm)
+        P/S azimuth thruster revolution over the prediction horizon.
         Must be in the range of -203 (rpm) - 203 (rpm)
-    angle: float array - length nph (deg)
-        Azimuth thruster agle over the prediction horizon.
+    p,s_angle: float array - length nph (deg)
+        P/S Azimuth thruster angle over the prediction horizon.
+    tun_revs: float array - length nph (rpm)
+        Tunnel thruster revolution over the prediction horizon.
+        Must be in the range of -203 (rpm) - 203 (rpm)
     V_w: float (m/s)
         Global wind speed. Assumed no change over the prediction horizon.
     beta_w: float (rad)
@@ -76,8 +79,11 @@ if __name__ == '__main__':
     r0 = 0.0
     revs0 = 100.0
     angle0 = 20.0
-    revs = np.ones(nph) * revs0
-    angle = np.ones(nph) * angle0
+    p_revs = np.ones(nph) * revs0
+    p_angle = np.ones(nph) * angle0
+    s_revs = p_revs
+    s_angle = p_angle
+    tun_revs = np.zeros(nph)
     V_w = 0.0
     beta_w = 0.0
     Log_states = np.zeros((nph, 6))
@@ -99,8 +105,11 @@ if __name__ == '__main__':
 
         x, globaltime = model.simulate(fmu=fmu,
                                        vrs=vrs,
-                                       revs=revs[iph],
-                                       angle=angle[iph],
+                                       p_revs=p_revs[iph],
+                                       p_angle=p_angle[iph],
+                                       s_revs=s_revs[iph],
+                                       s_angle=s_angle[iph],
+                                       tun_revs=tun_revs[iph],
                                        V_w=V_w,
                                        beta_w=beta_w,
                                        globaltime=globaltime,
