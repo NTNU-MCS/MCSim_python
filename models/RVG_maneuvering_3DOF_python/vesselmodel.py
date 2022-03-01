@@ -74,6 +74,15 @@ class vesselmodel():
         self.Y_coeff = [Xudot, Yuv, Yur, Yuur, Yuuv, Yvvv, Yrrr, Yrrv, Yvvr, Ymodrv, Ymodvv, Ymodvr, Ymodrr]
         self.N_coeff = [(Yvdot-Xudot), 0.5*(Nvdot+Yrdot), Nuv, Nur, Nuur, Nuuv, Nvvv, Nrrr, Nrrv, Nvvr, Nmodvv, Nmodvr, Nmodrv, Nmodrr]
 
+    def RBCC_Forces(self, u, v, r):
+
+        CRB = np.array([[                0, -self.m * r, -self.m * self.x_g * r],
+                        [       self.m * r,           0,                      0],
+                        [self.m * self.x_g * r,       0,                      0]])
+
+        F_RBCC = - CRB @ np.array([u, v, r])
+
+        return - np.array([[F_RBCC[0], F_RBCC[1], F_RBCC[2]]]).T
 
     def HydrodynamicForces(self, u, v, r):
 
@@ -130,13 +139,6 @@ class vesselmodel():
 
         A_L = 172 # ship side projection area (m2)
         A_F = 81 # ship front projection area (m2)
-
-        """
-        Special Attention.
-        input beta_w (wind direction) is wind direction defined in the global coordinate
-        Note that this definition is different from that in Fossen's book,
-        therefore modification adding np.pi has been implemented below.
-        """
 
         u_wr = self.V_w * math.cos(self.beta_w + np.pi - psi)
         v_wr = self.V_w * math.sin(self.beta_w + np.pi - psi)
@@ -205,9 +207,11 @@ class vesselmodel():
         res[0:3] = np.array([x[3]*math.cos(x[2])-x[4]*math.sin(x[2]), x[3]*math.sin(x[2])+x[4]*math.cos(x[2]), x[5]]).T
 
         F_h = self.HydrodynamicForces(u, v, r)
+        F_RBCC = self.RBCC_Forces(u, v, r)
         F_w = self.WindForces(psi)
         F_a = self.ForceAzimuth(u, v, r, revs=self.revs, angle=self.angle)
-        F_total = F_h + F_w + 2 * F_a
+
+        F_total = F_h + F_w + 2 * F_a + F_RBCC
 
         res[3:6] = (np.linalg.inv(self.M) @ F_total).flatten()
 
