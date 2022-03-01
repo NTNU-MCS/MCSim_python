@@ -176,7 +176,6 @@ class vesselmodel():
 
     def ForceAzimuth(self, u, v, r, revs, angle, ly):
 
-        lx = 13.22
         l = np.sqrt(self.lx ** 2 + ly ** 2)
         sint = ly / l
         cost = self.lx / l
