@@ -25,7 +25,7 @@ drawings, dynamic time constants are a (somewhat qualified) guess.
 import numpy as np
 import scipy.io
 import pickle
-import json
+import pandas as pd
 
 # =============================================================================
 # 6DOF vessel parameters from VERES, extracted using matlab
@@ -33,12 +33,12 @@ import json
 file_name = 'RVGManModelParam6DOF.mat'
 
 vessel= scipy.io.loadmat(file_name)
-L = vessel['Lpp'] #length between perpendiculars
-B = vessel['Bm'] #Breadth middle
-T = vessel['Tm'] #Draught middle
+L = vessel['Lpp'][0,0] #length between perpendiculars
+B = vessel['Bm'][0,0] #Breadth middle
+T = vessel['Tm'][0,0] #Draught middle
 Mrb = np.array(vessel['Mrb']) #rigid body mass
 A = np.array(vessel['A']) #added mass (frequency and velocity dependent)
-freq_index = 0 #index, use low-frequency for manuevering
+freq_index = 35 #index, use low-frequency for manuevering
 vel_index = 4#index, 5.2m/s=10knots, Gunnerus cruising speed
 reference_velocity = vessel['velocities'][0,vel_index]
 Ma = A[:,:,freq_index,vel_index]
@@ -75,8 +75,8 @@ x = -vessel['CG'][0,0]-L/2
 y = 2.7
 z = -2.4 #estimate
 
-rt1 = np.array([x[0,0],y,z]) #location of thruster 1
-rt2 = np.array([x[0,0],-y,z]) #location of thruster 1
+rt1 = np.array([x,y,z]) #location of thruster 1
+rt2 = np.array([x,-y,z]) #location of thruster 1
 T = np.array([[1,0],[0,1]]) #thruster dynamics time constants 
 #dict containing actuator model parameters
 parA = {'rt1':rt1,'rt2':rt2,'T':T} 
@@ -152,13 +152,22 @@ Nmodvr=-2258197.6812
 Xuu=-2100
 
 print('Compare hydrodynamic added mass between ShipX and hydro derivatives')
-print('Surge VERES', Ma[0,0])
-print('Surge DERIV', -Xudot)
-print('Sway VERES', Ma[1,1])
-print('Sway DERIV', -Yvdot)
-print('Yaw VERES', Ma[5,5])
-print('Yaw DERIV', -Nrdot)
-print('Sway-Yaw VERES', Ma[1,5])
-print('Sway-Yaw DERIV', -Yrdot)
-print('Yaw-Sway VERES', Ma[5,1])
-print('Yaw-Sway DERIV', -Nvdot)
+print('Surge VERES', round(Ma[0,0]))
+print('Surge DERIV', round(-Xudot))
+print('Sway VERES', round(Ma[1,1]))
+print('Sway DERIV', round(-Yvdot))
+print('Yaw VERES', round(Ma[5,5]))
+print('Yaw DERIV', round(Mrb[5,5]))
+print('Yaw rigid body', round(-Nrdot))
+print('Sway-Yaw VERES', round(Ma[1,5]))
+print('Sway-Yaw DERIV', round(-Yrdot))
+print('Yaw-Sway VERES', round(Ma[5,1]))
+print('Yaw-Sway DERIV', round(-Nvdot))
+
+print('Calculate equivalent drag coefficients for hydro derivatives')
+T=vessel['Tm'][0,0]
+rho = 1025
+Cd_surge = -Xuu*2/B/T/rho
+Cd_sway = -Ymodvv*2/L/T/rho
+print('Cd surge', Cd_surge)
+print('Cd sway', Cd_sway)
