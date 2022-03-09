@@ -78,6 +78,16 @@ if __name__ == '__main__':
     v_vico = np_load['sway_vel']
     rdeg_vico = np_load['yaw_vel']
 
+    """
+    Wind condition !Special attention must be paid here!
+    The definition of global wind angle beta_w follows the definition in Fossen's book.
+    See Figure 8.1 in P.189.
+    This definition is different from global wind angle in Vico.
+    beta_w = beta_w(vico) - np.pi
+    """
+    V_w = 0.0
+    beta_w = 0.0
+
     h = 1.0
     nph = 30
     N0 = N_vico[0]
@@ -93,8 +103,6 @@ if __name__ == '__main__':
     s_revs = p_revs
     s_angle = p_angle
     tun_revs = np.zeros(nph)
-    V_w = 0.0
-    beta_w = 0.0
     Log_states = np.zeros((nph, 6))
 
     fmu, vrs = fmuinitialize()

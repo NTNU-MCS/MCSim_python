@@ -20,6 +20,8 @@ class vesselmodel():
             Position of gravity centre in the x direction of the body-fixed coordinate system.
         L_pp : float (m)
             Length between perpendiculars
+        L_oa : float (m)
+            Over all length
         I_z : float (kgm2)
             The inertia moment about the vertical axis.
         dens : float (kg/m3)
@@ -35,6 +37,7 @@ class vesselmodel():
         self.m = 0.41093181E+06
         self.x_g = 0.0
         self.L_pp = 28.9
+        self.L_oa = 31.25
         self.I_z = 0.21450896E+08
         self.dens = 1025
         self.ly = 2.7
@@ -152,25 +155,28 @@ class vesselmodel():
 
         return np.array([[X_h, Y_h, N_h]]).T
 
-    def WindForces(self, psi):
+    def WindForces(self, u, v, psi):
 
         A_L = 172 # ship side projection area (m2)
         A_F = 81 # ship front projection area (m2)
 
-        u_wr = self.V_w * math.cos(self.beta_w + np.pi - psi)
-        v_wr = self.V_w * math.sin(self.beta_w + np.pi - psi)
+        u_w = self.V_w * math.cos(self.beta_w - psi)
+        v_w = self.V_w * math.sin(self.beta_w - psi)
 
-        Ua = (u_wr ** 2 + v_wr ** 2) ** 0.5
-        epsilon = math.atan2(v_wr, u_wr)
+        u_rw = u - u_w
+        v_rw = v - v_w
 
-        dir = np.arange(0.0, 181.0, 10.0) * np.pi
-        CX = np.array([-0.53, -0.59, -0.65, -0.59, -0.51, -0.47, -0.4, -0.29, -0.2, -0.18, -0.14, -0.05, 0.12, 0.37, 0.61, 0.82, 0.86, 0.72, 0.62])
+        V_rw = math.sqrt(u_rw ** 2 + v_rw ** 2)
+        gamma_rw = - math.atan2(v_rw, u_rw)
+
+        dir = np.linspace(0.0, np.pi, 19)
+        CX = - np.array([-0.53, -0.59, -0.65, -0.59, -0.51, -0.47, -0.4, -0.29, -0.2, -0.18, -0.14, -0.05, 0.12, 0.37, 0.61, 0.82, 0.86, 0.72, 0.62])
         CY = np.array([0, 0.22, 0.4, 0.66, 0.83, 0.9, 0.88, 0.87, 0.86, 0.85, 0.83, 0.82, 0.81, 0.73, 0.58, 0.46, 0.26, 0.09, 0])
         CN = np.array([0, 0.05, 0.1, 0.135, 0.149, 0.148, 0.114, 0.093, 0.075, 0.04, 0.02, -0.013, -0.035, -0.041, -0.045, -0.04, -0.029, -0.014, 0])
 
-        X = np.interp(abs(epsilon), dir, CX) * 1.23 / 2 * Ua ** 2 * A_F
-        Y = -np.copysign(1, epsilon) * np.interp(abs(epsilon), dir, CY) * 1.23 / 2 * Ua ** 2 * A_L
-        N = -np.copysign(1, epsilon) * np.interp(abs(epsilon), dir, CN) * 1.23 / 2 * Ua ** 2 * A_L * self.L_pp
+        X = np.interp(abs(gamma_rw), dir, CX) * 1.23 / 2 * V_rw ** 2 * A_F
+        Y = np.copysign(1, gamma_rw) * np.interp(abs(gamma_rw), dir, CY) * 1.23 / 2 * V_rw ** 2 * A_L
+        N = np.copysign(1, gamma_rw) * np.interp(abs(gamma_rw), dir, CN) * 1.23 / 2 * V_rw ** 2 * A_L * self.L_oa
 
         return np.array([[X, Y, N]]).T
 
@@ -232,7 +238,7 @@ class vesselmodel():
 
         F_h = self.HydrodynamicForces(u=u, v=v, r=r)
         F_RBCC = self.RBCC_Forces(u=u, v=v, r=r)
-        F_w = self.WindForces(psi=psi)
+        F_w = self.WindForces(u=u, v=v, psi=psi)
         F_AzimuthP = self.ForceAzimuth(u=u, v=v, r=r, revs=self.p_revs, angle=self.p_angle, ly=self.ly)
         F_AzimuthS = self.ForceAzimuth(u=u, v=v, r=r, revs=self.s_revs, angle=self.s_angle, ly=-self.ly)
         F_Tunnel = self.ForceTunnel()
