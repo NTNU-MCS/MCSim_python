@@ -69,14 +69,23 @@ if __name__ == '__main__':
         Six states over the prediction horizon.
     """
 
+    # Vico result: calculated by NTNU Ålesund with same conditions.
+    np_load = np.load('Data_vico/turn_angle20_revs100.npz')
+    N_vico = np_load['N']
+    E_vico = np_load['E']
+    psi_vico = np_load['heading']
+    u_vico = np_load['surge_vel']
+    v_vico = np_load['sway_vel']
+    rdeg_vico = np_load['yaw_vel']
+
     h = 1.0
     nph = 30
-    N0 = 0.0
-    E0 = 0.0
-    psi0 = 0.0
-    u0 = 0.0
-    v0 = 0.0
-    r0 = 0.0
+    N0 = N_vico[0]
+    E0 = E_vico[0]
+    psi0 = np.deg2rad(psi_vico[0])
+    u0 = u_vico[0]
+    v0 = v_vico[0]
+    r0 = np.deg2rad(rdeg_vico[0])
     revs0 = 100.0
     angle0 = 20.0
     p_revs = np.ones(nph) * revs0
@@ -119,7 +128,8 @@ if __name__ == '__main__':
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(Log_states[:, 1], Log_states[:, 0], color='black')
+    ax.plot(Log_states[:, 1], Log_states[:, 0], color='black', label='python')
+    ax.plot(E_vico[1:nph+1], N_vico[1:nph+1], color='blue', label='vico')
     ax.scatter(Log_states[0, 1], Log_states[0, 0], color='red', label='Initial position')
     ax.set_xlabel('East(m)')
     ax.set_ylabel('North(m)')
@@ -130,13 +140,19 @@ if __name__ == '__main__':
 
     fig = plt.figure(figsize=(7, 5))
     ax = fig.add_subplot(311)
-    ax.plot(Log_states[:, 3])
+    ax.plot(Log_states[:, 3], color='black', label='Python')
+    ax.plot(u_vico[1:nph+1], color='blue', label='vico')
     ax.set_ylabel('u(m/s)')
+    plt.legend()
     ax = fig.add_subplot(312)
-    ax.plot(Log_states[:, 4])
+    ax.plot(Log_states[:, 4], color='black', label='Python')
+    ax.plot(v_vico[1:nph+1], color='blue', label='vico')
     ax.set_ylabel('v(m/s)')
+    plt.legend()
     ax = fig.add_subplot(313)
-    ax.plot(np.rad2deg(Log_states[:, 5]))
+    ax.plot(np.rad2deg(Log_states[:, 5]), color='black', label='Python')
+    ax.plot(rdeg_vico[1:nph+1], color='blue', label='vico')
     ax.set_ylabel('r(deg/s)')
     ax.set_xlabel('Time(s)')
+    plt.legend()
     plt.show()
