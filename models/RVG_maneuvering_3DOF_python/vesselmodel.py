@@ -87,7 +87,7 @@ class vesselmodel():
                            [           0,          self.m-Yvdot, self.m*self.x_g-Yrdot],
                            [           0, self.m*self.x_g-Nvdot,        self.I_z-Nrdot]])
 
-        self.X_coeff = [Yvdot, 0.5*(Nvdot+Yrdot), Xuu, 0.0, Xrvu, Xvv, Xrv, Xuvv, Xrr, Xurr, Xumodv]
+        self.X_coeff = [-Yvdot, -0.5*(Nvdot+Yrdot), Xuu, 0.0, Xrvu, Xvv, Xrv, Xuvv, Xrr, Xurr, Xumodv]
         self.Y_coeff = [Xudot, Yuv, Yur, Yuur, Yuuv, Yvvv, Yrrr, Yrrv, Yvvr, Ymodrv, Ymodvv, Ymodvr, Ymodrr]
         self.N_coeff = [(Yvdot-Xudot), 0.5*(Nvdot+Yrdot), Nuv, Nur, Nuur, Nuuv, Nvvv, Nrrr, Nrrv, Nvvr, Nmodvv, Nmodvr, Nmodrv, Nmodrr]
 
@@ -99,7 +99,7 @@ class vesselmodel():
 
         F_RBCC = - CRB @ np.array([u, v, r])
 
-        return - np.array([[F_RBCC[0], F_RBCC[1], F_RBCC[2]]]).T
+        return np.array([[F_RBCC[0], F_RBCC[1], F_RBCC[2]]]).T
 
     def HydrodynamicForces(self, u, v, r):
 
