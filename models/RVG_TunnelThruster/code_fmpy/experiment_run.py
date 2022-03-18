@@ -1,17 +1,9 @@
 import TunnelThruster_class
 import numpy as np
-import pandas as pd
-import numpy as np
-import math
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
-
-from scipy import optimize
-
-import fmpy
 from fmpy import *
 from fmpy.fmi1 import FMU1Slave
-from fmpy.util import plot_result, download_test_file
 
 def fmuinitialize():
 

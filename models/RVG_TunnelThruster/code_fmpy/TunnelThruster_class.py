@@ -1,13 +1,3 @@
-import numpy as np
-import math
-import matplotlib.pyplot as plt
-import shutil
-
-import fmpy
-from fmpy import *
-from fmpy.fmi1 import FMU1Slave
-from fmpy.util import plot_result, download_test_file
-
 class TunnelThruster():
 
     def __init__(self, fmu, vrs, globaltime, ncooldown, v, revs, h):
