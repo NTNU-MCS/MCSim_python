@@ -20,15 +20,17 @@ varunit = ['m/s','m/s','deg/s','deg','RPM','N','N','N','deg']
 
 df = pd.read_csv('output.csv')
 
-df.columns = varname[0:7]
-df['Ftot'] = np.sqrt(df.Fx**2+df.Fy**2)
-df['forceangle'] = np.arctan2(df.Fy,df.Fx)*180/np.pi
-
-df = df.drop(df[df.r != 0].index)
-
-
-ii = df[df.revs==165].index
-plt.scatter(df.angle[ii],df.Fx[ii])
+# =============================================================================
+# df.columns = varname[0:7]
+# df['Ftot'] = np.sqrt(df.Fx**2+df.Fy**2)
+# df['forceangle'] = np.arctan2(df.Fy,df.Fx)*180/np.pi
+# 
+# df = df.drop(df[df.r != 0].index)
+# 
+# 
+# ii = df[df.revs==165].index
+# plt.scatter(df.angle[ii],df.Fx[ii])
+# =============================================================================
 
 
 
