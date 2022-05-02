@@ -17,11 +17,11 @@ uniform and steady currents, using a linear+quadratic damping formulation
 Vessel parameters are loaded from pickle files, generated in
 GenerateRVGManeuveringModelData.py
 
-Example simulation uses a PD-controller to maintain constant heading for 50sec,
-before executing a hard turn  
+Example simulation uses a PD-controller to maintain constant heading 
+before executing a hard turn.   
 
-Control inputs are the commanded thruster states: force and angle of the
-two azimuth thrusters. Simple 1st order model used for actuator dynamics
+Control inputs are the commanded thruster states: azimuth angle and propeller
+revs of an equivalent thruster located at centreline. 
 """
 # ---------------------------------------------------------------------------
 # Imports/dependencies: used together with Module_RVG_3DOF
@@ -30,6 +30,7 @@ two azimuth thrusters. Simple 1st order model used for actuator dynamics
 # =============================================================================
 # Set path
 # =============================================================================
+
 import os
 from pathlib import Path
 import sys
@@ -52,6 +53,8 @@ import visualization as viz
 # =============================================================================
 import Module_RVGManModel_3DOF as model
 
+plt.close('all')
+
 # =============================================================================
 # load model data
 # =============================================================================
@@ -63,32 +66,35 @@ parA = pickle.load( open("data\\parA_RVG.pkl", "rb" ) )
 # =============================================================================
 # simulation parameters
 # =============================================================================
-tmax=200
+tmax=600
 dt=0.5 #time step
 tvec = np.linspace(0,tmax,int(tmax/dt)+1)
 
 Uc=np.array(0.5) #current speed
+Uc=0.5
 betac = -np.pi/4#current direction
 parS = {'dt':dt, 'Uc': Uc, 'betac': betac} #dict containing simulation param
 
 # =============================================================================
 # Control parameters
 # =============================================================================
-Kp = 1 #heading proportional gain
+Kp = 2 #heading proportional gain
 Kd = 20 #heading derivative gain
 
 Uref=parV['reference_velocity']
 thrustforce = parV['Dl'][0,0]*Uref+parV['Du'][0,0]*Uref**2
-psiref=0
+psiref=np.pi/2
 
 # =============================================================================
 # Initial conditions and allocate memory
 # =============================================================================
-thrust1state = np.array([0,0]) #(force and azimuth angle)
-thrust2state = np.array([thrustforce*2/3,-np.pi/6]) #(force and azimuth angle)
+
+revs_d=170
+
+thrust_state = np.array([0,100]) #azimuth angle and revs
 nu=np.array([Uref,0,0])
-eta=np.array([0,0,0.1])
-x=np.concatenate((eta,nu,thrust1state,thrust2state))
+eta=np.array([0,0,0])
+x=np.concatenate((eta,nu,thrust_state))
 x_out=np.zeros([len(x),len(tvec)])
 
 # =============================================================================
@@ -102,19 +108,23 @@ for i1, t in enumerate(tvec):
     #control system (same azimuth angle for both thrusters)
     azi_d = Kp*(km.rad2pipi(x[2]-psiref))+Kd*x[5]
     azi_d = np.max([np.min([azi_d,np.pi/6]),-np.pi/6]) 
-    if t>=50:
+    if t>=400:
         azi_d = np.pi/6 #execute evasive manuever
-    #desired thruster state, commanded by control system:
-    thrust_d = np.array([thrustforce/2,azi_d,thrustforce/2,azi_d])
+    
+    if t>=200:
+        revs_d=220 #ramp up propeller revs
+        
+    #desired thruster state, i.e., control input:
+    u = np.array([azi_d,revs_d])
     
     #time integration
     Fw = np.zeros(3) #no disturbance force
-    x = model.int_RVGMan3_lq(x, thrust_d, Fw, parV, parA, parS)
+    x = model.int_RVGMan3_lq(x, u, Fw, parV, parA, parS)
   
 #sort output
 eta=x_out[0:3,:]
 nu=x_out[3:6,:]
-thruststates = x_out[6:10,:]
+thruststates = x_out[6:8,:]
 
 # =============================================================================
 # plot
@@ -129,9 +139,8 @@ plt.ylabel('y [m]')
 plt.axis('equal')
 
 titles = ['x position','y position','heading','surge velocity','sway velocity',
-           'yaw velocity','force thruster 1','azimuth angle thruster 1',
-           'force thruster 2','azimuth angle thruster 2']
-units = ['m','m','rad','m/s','m/s','rad/s','N','rad','N','rad']
+           'yaw velocity','azimuth angle','thruster revs']
+units = ['m','m','rad','m/s','m/s','rad/s','rad','RPM']
 parP={'figsize':figxy,'titles':titles,'units':units}
 
 viz.plot_timeseries(tvec,x_out,parP)

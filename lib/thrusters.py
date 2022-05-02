@@ -105,8 +105,8 @@ def RVGazimuth_man(u,v,angle,revs):
     Ffoilx = -Fdrag*np.cos(aoa)+Flift*np.sin(aoa) #force in foil x direction
     Ffoily = Flift*np.cos(aoa)++Fdrag*np.sin(aoa) #force in foil y direction
     
-    Tc=1.8 #thruster coefficient (just a guess)   
-    Fthrust = Tc*revs**2 #propeller thrust force
+    Ct=1.8 #thruster coefficient (just a guess)   
+    Fthrust = Ct*revs**2 #propeller thrust force
     
     #decompose loads in body-fixed surge and sway force
     Fx = Fthrust*np.cos(angle)+Ffoilx*np.cos(angle)-Ffoily*np.sin(angle)

@@ -76,7 +76,7 @@ Fxv2 = np.zeros(np.size(us))
 Fyv2 = np.zeros(np.size(us))
 
 
-angle=2
+angle=10
 v=0
 revss=df.revs.unique()
 revss = [150,165,180]
@@ -124,8 +124,8 @@ plt.title(titstr)
 # Plots versus azimuth angle
 # =============================================================================
 
-u=5
-v=0.5
+u=6
+v=1
 revss=df.revs.unique()
 revss = [150,165,180]
 angles=df.angle.unique()
@@ -160,11 +160,15 @@ plt.legend(legstr)
 plt.xlabel('azimuth angle [deg]')
 plt.ylabel('Fx [N]')
 plt.title(titstr)
+plt.tight_layout()
+plt.savefig('Fxversusangle.pdf')
 plt.figure(4)
 plt.legend(legstr)
 plt.xlabel('azimuth angle [deg]')
 plt.ylabel('Fy [N]')
 plt.title(titstr)
+plt.tight_layout()
+plt.savefig('Fyversusangle.pdf')
 
 # =============================================================================
 # Plots versus sway speed
@@ -172,7 +176,7 @@ plt.title(titstr)
 
 u=5
 vs=df.v.unique()
-revs=165
+revs=180
 angles = [0, 10, 20]
 Fxv1 = np.zeros(np.size(vs))
 Fyv1 = np.zeros(np.size(vs))
@@ -212,6 +216,8 @@ plt.legend(legstr)
 plt.xlabel('v m/s')
 plt.ylabel('Fy [N]')
 plt.title(titstr)
+plt.tight_layout()
+plt.savefig('Fyversusswayspeed.pdf')
 
 
 

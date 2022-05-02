@@ -14,8 +14,7 @@
 This script prepares model data for Gunnerus maneuvering models
 
 Vessel parameters are loaded from MATLAB, original source VERES. 
-Additional hydrodynamic data are added by engineering judgement, 
-for example purposes only.
+Additional hydrodynamic data are added by engineering judgement.
 
 Gunnerus has two azimuth thrusters.Thruster location crudely estimated from 
 drawings, dynamic time constants are a (somewhat qualified) guess. 
@@ -25,7 +24,6 @@ drawings, dynamic time constants are a (somewhat qualified) guess.
 import numpy as np
 import scipy.io
 import pickle
-import pandas as pd
 
 # =============================================================================
 # 6DOF vessel parameters from VERES, extracted using matlab
@@ -45,14 +43,21 @@ Ma = A[:,:,freq_index,vel_index]
 K = np.array(vessel['C']) #hydrostatic stiffness
 Dl = np.array(vessel['Bv']) #linear damping matrix
 
+#Reducing linear damping, since quadratic drag is added below. 
+
+Dl[0,0] = 0.05*Dl[0,0]
+Dl[1,1] = 0.1*Dl[1,1]
+Dl[4,4] = 0.1*Dl[4,4]
+
+
 #source does not include heave and pitch damping, so adding some
 #large values (we are not interested in heave/pitch response)
-Dl[2,2] = Dl[1,1]*10 #heave=10*sway 
-Dl[4,4] = Dl[5,5]*10 #pitch = 10*yaw
+Dl[2,2] = Dl[1,1]*100 #heave=100*sway 
+Dl[4,4] = Dl[5,5]*100 #pitch = 100*yaw
 
 #add some order of magnitude quadratic damping in surge/sway/yaw
-Cdx=0.5 #surge drag coefficient
-Cdy=1 #sway drag coefficient
+Cdx=0.125 #surge drag coefficient
+Cdy=0.5 #sway drag coefficient
 
 Du = Dl*0
 Du[0,0]=0.5*Cdx*B*T*10**3 #quadratic damping coefficient in surge
@@ -77,9 +82,11 @@ z = -2.4 #estimate
 
 rt1 = np.array([x,y,z]) #location of thruster 1
 rt2 = np.array([x,-y,z]) #location of thruster 1
-T = np.array([[1,0],[0,1]]) #thruster dynamics time constants 
+rt = np.array([x,0,z]) #location of equivalent thruster at centreline
+Tazi = np.array([1]) #thruster azimuth angle dynamics time constants 
+Trevs = np.array([1]) #thruster revolutions dynamics time constants 
 #dict containing actuator model parameters
-parA = {'rt1':rt1,'rt2':rt2,'T':T} 
+parA = {'rt':rt,'Tazi':Tazi,'Trevs':Trevs} 
 
 
 # =============================================================================
