@@ -103,7 +103,7 @@ def RVGazimuth_man(u,v,angle,revs):
     Fdrag = 0.5*rho*A*Cd*V**2 #drag force on foil (parallel to fluid velocity)
     Flift = 0.5*rho*A*Cl*V**2 #lift force on foil (normal to fluid velocity)
     Ffoilx = -Fdrag*np.cos(aoa)+Flift*np.sin(aoa) #force in foil x direction
-    Ffoily = Flift*np.cos(aoa)++Fdrag*np.sin(aoa) #force in foil y direction
+    Ffoily = Flift*np.cos(aoa)+Fdrag*np.sin(aoa) #force in foil y direction
     
     Ct=1.8 #thruster coefficient (just a guess)   
     Fthrust = Ct*revs**2 #propeller thrust force

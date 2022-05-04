@@ -25,6 +25,7 @@ import numpy as np
 import scipy.io
 import pickle
 
+
 # =============================================================================
 # 6DOF vessel parameters from VERES, extracted using matlab
 # =============================================================================
@@ -41,13 +42,23 @@ vel_index = 4#index, 5.2m/s=10knots, Gunnerus cruising speed
 reference_velocity = vessel['velocities'][0,vel_index]
 Ma = A[:,:,freq_index,vel_index]
 K = np.array(vessel['C']) #hydrostatic stiffness
+K[:,5] = 0
+K[5,:] = 0
 Dl = np.array(vessel['Bv']) #linear damping matrix
+
+Ba = np.array(vessel['B'])
+Ba = Ba[:,:,freq_index,vel_index]
+
+#Ma[3,1]=Ma[3,1]*10
+#Ma[1,3]=Ma[1,3]*10
+#Ma[3,5]=0
+#Ma[5,3]=0
 
 #Reducing linear damping, since quadratic drag is added below. 
 
 Dl[0,0] = 0.05*Dl[0,0]
-Dl[1,1] = 0.1*Dl[1,1]
-Dl[4,4] = 0.1*Dl[4,4]
+Dl[1,1] = 0.2*Dl[1,1]
+Dl[5,5] = 0.2*Dl[5,5]
 
 
 #source does not include heave and pitch damping, so adding some
@@ -67,10 +78,45 @@ Dr = Dl*0
 Dr[5,5] = Dv[1,1]*L**4/64 #quadratic damping coefficient in yaw
 
 
-parV = {'Mrb':Mrb,'Ma':Ma,'Dl':Dl,'Du':Du,'Dr':Dr,'Dv':Dv,
-        'reference_velocity':reference_velocity}
+#parV = {'Mrb':Mrb,'Ma':Ma,'Dl':Dl,'Du':Du,'Dr':Dr,'Dv':Dv,
+#        'reference_velocity':reference_velocity}
 
 
+
+
+# =============================================================================
+# Roll stiffness for use in 6DOF model. Based on VERES data, but COG modified 
+# to a more realistic value.
+# =============================================================================
+K44_VERES = vessel['C'][3,3] #VERES uses COG at waterline, probably due to lack
+#of other information. For reference
+GM_veres = 2.304# metacenter height with COG at waterline, for reference
+COB = -1.131# rel waterline
+Mass = 573140# kg, rigid body mass
+Volume = Mass/1025#m^3, displacement
+BM = GM_veres-COB #used to calculate Iwp
+Iwp =  Volume*BM #second area moment of waterplane
+COG_lightship = 0.68# rel waterline, from stability report
+COG = 1.5#COG_lightship #assume COG of full ship is equal to lightship COG.
+K44 = 9.81*1025*(Iwp+Volume*(COB-COG)) #estimated roll stiffness
+
+K[3,3] = K44
+
+#Roll quadratic damping
+Dp = Dl*0
+
+Dp[3,3] = Dv[1,1]*B**4/64 #quadratic damping coefficient in roll
+
+
+
+COB_rel_COG = COB-COG
+
+Dl[1,3] = -Dl[1,1]*COB_rel_COG
+Dl[3,1] = -Dl[1,1]*COB_rel_COG
+
+Ma[3,1] = -Ma[1,1]*COB_rel_COG
+Ma[1,3] = -Ma[1,1]*COB_rel_COG
+Ma[3,3] = Ma[3,3]+Ma[1,1]*(COB_rel_COG**2-COB**2)
 
 # =============================================================================
 # Actuator model parameters (equivalent thruster placed at centerline)
@@ -78,21 +124,30 @@ parV = {'Mrb':Mrb,'Ma':Ma,'Dl':Dl,'Du':Du,'Dr':Dr,'Dv':Dv,
 #coordinates rel COG (assumed reference point for VERES data)
 x = -vessel['CG'][0,0]-L/2 
 y = 2.7
-z = -2.4 #estimate
+z = -2.4-COG #estimate
+
 
 rt1 = np.array([x,y,z]) #location of thruster 1
 rt2 = np.array([x,-y,z]) #location of thruster 1
 rt = np.array([x,0,z]) #location of equivalent thruster at centreline
 Tazi = np.array([1]) #thruster azimuth angle dynamics time constants 
 Trevs = np.array([1]) #thruster revolutions dynamics time constants 
+dazi_max = 10*np.pi/180 #max azimuth rate
+drevs_max = 10 #max revolutions rate
+
 #dict containing actuator model parameters
-parA = {'rt':rt,'Tazi':Tazi,'Trevs':Trevs} 
+parA = {'rt':rt,'Tazi':Tazi,'Trevs':Trevs,'dazi_max':dazi_max,'drevs_max':drevs_max} 
 
 
 # =============================================================================
 # Store data
 # =============================================================================
 #store 6DOF vessel data
+
+parV = {'Mrb':Mrb,'Ma':Ma,'Dl':Dl,'Du':Du,'Dr':Dr,'Dv':Dv*0,'Dp':Dp*0,'K':K,
+        'dvv':Dv[1,1],'z_b':COB_rel_COG,
+        'reference_velocity':reference_velocity}
+
 f = open("parV_RVG6DOF.pkl","wb")
 pickle.dump(parV,f)
 f.close()

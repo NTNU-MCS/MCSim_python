@@ -45,7 +45,7 @@ def Rotx(angle):
     """
     # Created: 2022-02-04 M.Marley 
     # Tested: 2022-02-04 M.Marley 
-    Rx = np.array([[0, 0, 1],
+    Rx = np.array([[1, 0, 0],
           [0, np.cos(angle), -np.sin(angle)],
           [0, np.sin(angle), np.cos(angle)]])
     return Rx
@@ -78,6 +78,19 @@ def Rotz(angle):
           [0, 0, 1]])
     return Rz
 
+def Rotzyx(angles):
+    """Rotation matrix about zyx-axis 
+       Input 
+           angles: euler angles in radians  
+       Output 
+           R: 3x3 matrix 
+    """
+    # Created: 2022-05-04 M.Marley 
+    # Tested:  
+    Rzyx = Rotz(angles[2])@Roty(angles[1])@Rotx(angles[0])
+    return Rzyx
+
+
 def Smat(x):
     """Skew-symmetric cross-product operator matrix 
        Input 
@@ -104,3 +117,30 @@ def dot_eta3(psi,nu):
     # Tested: 2022-02-04 M.Marley  
     d_eta3 = Rotz(psi)@nu
     return d_eta3
+
+def dot_eta6(eta,nu):
+    """Derivative of 6DOF position and orientation vector
+       Input 
+           eta: position and orientation
+           nu: 6DOF body-fixed velocities 
+       Output 
+           d_eta6: 6x1 vector 
+    """
+    # Created: 2022-05-02 M.Marley 
+    # Tested: 2022-05-02 M.Marley  
+    
+    Rzyx = Rotzyx(eta[3:6])
+    
+    phi = eta[3]
+    theta = eta[4]
+#    psi = eta[5]
+    T = np.array([[1,np.sin(phi)*np.tan(theta),np.cos(phi)*np.tan(theta)],
+                  [0, np.cos(phi), -np.sin(phi)],
+                  [0, np.sin(phi)/np.cos(theta), np.cos(phi)/np.cos(theta)]])
+    
+    d_eta6 = np.zeros(len(eta))
+    
+    d_eta6[0:3] = Rzyx@nu[0:3]
+    d_eta6[3:6] = T@nu[3:6]
+    
+    return d_eta6
