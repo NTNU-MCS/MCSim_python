@@ -5,7 +5,9 @@ import pynmea2
 from pyais import decode as ais_decode
 
 eol_separator = '\r\n'
-bad_eol_separator = '\\r\\n'
+
+#[['bad_1','good_1'],['bad_2','good_2'],..., ['bad_n','good_n']]
+bad_eol_separators = [['\\r','\r'],['\\n', '\n']] 
 loop_limit = 1
 
 # Variables for logging the UDP stream
@@ -19,10 +21,10 @@ parsed_msg_tags = []
 unknown_msg_tags = []
 
 #variables for console output   
-tag_verbose = False
+tag_verbose = True
 unparsed_tag_verbose = True
 parsed_message_verbose = False
-parse_error_verbose = False
+parse_error_verbose = True
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(("fagitrelay.it.ntnu.no",25508))
@@ -52,11 +54,17 @@ def update_data_object(parsed_msg, what, verbose = False):
         print('type {}{} Message: {}'.format(type(parsed_msg), what, repr(parsed_msg)))
     return
 
-def split_collated_string(raw_msg, eol_separator, bad_eol_separator):
+def split_collated_string(raw_msg, eol_separator, bad_eol_separators):
     parsed_string = raw_msg.decode(encoding='ascii') 
 
     # There's probably a better way to handle the bad double backslash
-    parsed_string = parsed_string.replace(bad_eol_separator, eol_separator)
+    for separator in bad_eol_separators:
+        bad_separator = separator[0]
+        good_separator = separator[1]
+
+        while parsed_string.find(bad_separator) != -1: 
+            parsed_string = parsed_string.replace(bad_separator, good_separator)
+
     string_list = parsed_string.strip().split(eol_separator)  
     return string_list
 
@@ -75,7 +83,7 @@ def parse_nmea_message(raw_msg, loop_limit = 1,__loop_count = 0):
             try:
                 assert(__loop_count < loop_limit)
                 __loop_count += 1
-                string_list = split_collated_string(raw_msg, eol_separator, bad_eol_separator)
+                string_list = split_collated_string(raw_msg, eol_separator, bad_eol_separators)
                 for entry in string_list:
                     entry = entry + eol_separator 
                     entry_bin = entry.encode(encoding="ascii")
