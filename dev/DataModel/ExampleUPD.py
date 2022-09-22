@@ -24,10 +24,10 @@ parsed_msg_tags = []
 unknown_msg_tags = []
 
 #variables for console output   
-tag_verbose = True
-unparsed_tag_verbose = True
+tag_verbose = False
+unparsed_tag_verbose = False
 parsed_message_verbose = False
-parse_error_verbose = False
+parse_error_verbose = True
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(("fagitrelay.it.ntnu.no",25508))
@@ -36,6 +36,7 @@ def save_individual_tags(raw_msg, target_list, target_list_name, parsed_message 
     tag = "encoded_byte_array"
     decoded_msg = raw_msg.decode(encoding='ascii')
     decoded_msg = decoded_msg.replace(eol_separator, '') 
+
     for begin_identifier in msg_begin_identifiers:
         if decoded_msg[0] == begin_identifier:
             tag = decoded_msg.split(',')[0] 
@@ -55,7 +56,7 @@ def update_data_object(parsed_msg, what, verbose = False):
         print('type {}{} Message: {}'.format(type(parsed_msg), what, repr(parsed_msg)))
     return
 
-def replace_bad_eol(raw_msg, eol_separator, bad_eol_separators):
+def fix_bad_eol(raw_msg): 
     parsed_string = raw_msg.decode(encoding='ascii') 
 
     # There's probably a better way to handle the bad double backslash
@@ -65,6 +66,14 @@ def replace_bad_eol(raw_msg, eol_separator, bad_eol_separators):
         while parsed_string.find(bad_separator) != -1: 
             parsed_string = parsed_string.replace(bad_separator, good_separator)
     string_list = parsed_string.strip().split(eol_separator)   
+    return string_list
+
+def fix_collated_msgs(raw_msg): 
+    parsed_string = raw_msg.decode(encoding='ascii') 
+    for begin_identifier in msg_begin_identifiers:
+        parsed_string = parsed_string.replace(begin_identifier, eol_separator + begin_identifier)
+
+    string_list = parsed_string.strip().split(eol_separator)  
     return string_list
 
 def parse_nmea(raw_msg):
@@ -78,30 +87,33 @@ def parse_ais(raw_msg):
     update_data_object(parsed_msg, 'AIS', parsed_message_verbose)
     save_individual_tags(raw_msg, parsed_msg_tags, "Parse Success", parsed_msg, tag_verbose)
 
-def parse_bad_eol(raw_msg, loop_limit, __loop_count):
-    assert(__loop_count < loop_limit) 
-    __loop_count += 1
-    string_list = replace_bad_eol(raw_msg, eol_separator, bad_eol_separators) 
+def parse_list(raw_msg, list_callback, loop_limit, __loop_count):
+    assert(__loop_count < loop_limit)  
+    string_list = list_callback(raw_msg) 
     assert(len(string_list) > 1)
+    __loop_count += 1
     for entry in string_list:
         entry = entry + eol_separator 
         entry_bin = entry.encode(encoding="ascii")
         parse_message(raw_msg = entry_bin, loop_limit = loop_limit, __loop_count = __loop_count)
+    return __loop_count
 
 def parse_message(raw_msg, loop_limit = 1, __loop_count = 0):    
     try: parse_nmea(raw_msg)
     except:
         try: parse_ais(raw_msg)
         except:
-            try: parse_bad_eol(raw_msg, loop_limit, __loop_count)                
+            try: __loop_count = parse_list(raw_msg, fix_bad_eol, loop_limit, __loop_count)                
             except:
-                try: 
-                    save_individual_tags(raw_msg, unknown_msg_tags, "Parse Failed", verbose = unparsed_tag_verbose)
-                    if parse_error_verbose:
-                        print('Unable to parse message: {}'.format(raw_msg))  
+                try: __loop_count = parse_list(raw_msg, fix_collated_msgs, loop_limit, __loop_count)
                 except:
-                    if parse_error_verbose:
-                        print('Unable to parse or save message tag: {}'.format(raw_msg))
+                    try:
+                        save_individual_tags(raw_msg, unknown_msg_tags, "Parse Failed", verbose = unparsed_tag_verbose)
+                        if parse_error_verbose:
+                            print('Unable to parse message: {}'.format(raw_msg))  
+                    except:
+                        if parse_error_verbose:
+                            print('Unable to parse or save message tag: {}'.format(raw_msg))
     
 if log_stream:
     f = open(log_file_name, "a")
