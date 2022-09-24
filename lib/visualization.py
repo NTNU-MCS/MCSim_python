@@ -8,7 +8,7 @@
 #          <date>	<developer> <description>
 # Tested:  
 # 
-# Copyright (C) 202x: <organization>, <place>
+# Copyright (C) 2022: NTNU, Department of marine technology, Trondheim, Norway
 # Licensed under GPL-3.0-or-later
 # ---------------------------------------------------------------------------
 """
@@ -18,13 +18,22 @@ Library of plotting functions
 # Imports/dependencies: self-explanatory
 # ---------------------------------------------------------------------------
 
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+
 
 # =============================================================================
 # Functions
 # =============================================================================
+
+
 def plot_timeseries(t,x,parP): 
+# ----------------------------------------------------------------------------
+# Created by: M. Marley on 2022-02-04
+# Revised: N/A
+# ---------------------------------------------------------------------------
     """Plots timeseries in individual plots. 
        Input 
           t: time vector of length m   
