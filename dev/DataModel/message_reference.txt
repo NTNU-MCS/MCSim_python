@@ -43,6 +43,8 @@ Parsed Succesfully
 
 '$RAOSD'   : (RA) RADAR and/or ARPA. (OSD) Own Ship Data
 
+'$RATTM'   : (RA) RADAR and/or ARPA. (TTM) Tracked Target Message
+
 'encoded_
 byte_array': It can be arbitrary
  
@@ -58,3 +60,6 @@ byte_array': unknown                                                      b"\\0\
 '!AIVDO'   : AIS Message                                                  b'!AIVDO,2,1,0,A,53nGtL42>wf4hqIb220MDppE9E>222222222221J1pE446Il09AR@Sim,0*42\r\n'
 
 '$AIALR'   : (AI) Alarm Indicator, possibly AIS. (ALR) Set alarm state    b'$AIALR,,,V,V,*7B\r\n'
+
+'$AIABK'   : (AI) Alarm Indicator, possibly AIS. (ABK) AIS adressed 
+             and binary broadcast acknowledgement]]]]]

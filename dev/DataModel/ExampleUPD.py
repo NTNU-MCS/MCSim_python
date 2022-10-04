@@ -24,9 +24,10 @@ parsed_msg_tags = []
 unknown_msg_tags = []
 
 #variables for console output   
-tag_verbose = False
-unparsed_tag_verbose = False
-parsed_message_verbose = False
+raw_verbose = True
+tag_verbose = True
+unparsed_tag_verbose = True
+parsed_message_verbose = True
 parse_error_verbose = True
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -119,7 +120,11 @@ if log_stream:
     f = open(log_file_name, "a")
 
 while True:
-    raw_msg = s.recv(4096)  
+    raw_msg = s.recv(4096)
+
+    if raw_verbose:
+        print(raw_msg)
+
     parse_message(raw_msg, loop_limit) 
     if log_stream:
         f.write(raw_msg)
