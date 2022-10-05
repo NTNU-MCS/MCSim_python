@@ -66,7 +66,7 @@ def draw_ship_2D(eta,parP):
                 type: 'ship' or 'arrow'
         An error message will be issued if dimensions of inputs are wrong.
     ----------------------------------------------------------------------------
-    Created by: R. Skjetne on 2022-10-02
+    Created by: R. Skjetne on 2022-10-02 
     Revised: N/A
     ---------------------------------------------------------------------------
     """         
