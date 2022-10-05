@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL 
 import socket
 import time
 import pynmea2
@@ -24,16 +23,16 @@ parsed_msg_tags = []
 unknown_msg_tags = []
 
 #variables for console output   
-raw_verbose = True
+raw_verbose = False
 tag_verbose = True
 unparsed_tag_verbose = True
-parsed_message_verbose = True
-parse_error_verbose = True
+parsed_message_verbose = False
+parse_error_verbose = False
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(("fagitrelay.it.ntnu.no",25508))
 
-def save_individual_tags(raw_msg, target_list, target_list_name, parsed_message = NULL, verbose = False):
+def save_individual_tags(raw_msg, target_list, target_list_name, parsed_message = None, verbose = False):
     tag = "encoded_byte_array"
     decoded_msg = raw_msg.decode(encoding='ascii')
     decoded_msg = decoded_msg.replace(eol_separator, '') 
@@ -47,7 +46,7 @@ def save_individual_tags(raw_msg, target_list, target_list_name, parsed_message 
             print('\r\n tag {} for {} list:'.format(tag , target_list_name))
             print('{} \r\n has been added for message:'.format(repr(target_list)))
             print(raw_msg)
-            if parsed_message is not NULL:
+            if parsed_message is not None:
                 print('saved parsed message is: {} \r\n'.format(repr(parsed_message)))
 
 def update_data_object(parsed_msg, what, verbose = False):
@@ -123,6 +122,7 @@ while True:
     raw_msg = s.recv(4096)
 
     if raw_verbose:
+        print("tick")
         print(raw_msg)
 
     parse_message(raw_msg, loop_limit) 
