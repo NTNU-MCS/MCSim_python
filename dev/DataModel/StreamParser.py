@@ -12,6 +12,9 @@ class StreamParser:
         # method for capping the size of this object might be necessary
         # that or figure out how to throw it to the heap
         self.parsed_msg_list = []
+
+        #incoming ais messages will be ignored if True
+        self.drop_ais_messages = True
         self.__stop = False
 
         # keep track of the buffered messages in bytes, doesnt
@@ -120,9 +123,12 @@ class StreamParser:
 
     def __parse_ais(self, raw_msg):
         parsed_msg = ais_decode(raw_msg)
-        self.__update_data_object(parsed_msg, raw_msg, 'AIS', self.__parsed_message_verbose)
-        self.__save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self.__tag_verbose)
+        
+        if self.drop_ais_messages: return
 
+        self.__save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self.__tag_verbose)
+        self.__update_data_object(parsed_msg, raw_msg, 'AIS', self.__parsed_message_verbose)
+        
     def __parse_list(self, raw_msg, list_callback, __loop_count):
         assert(__loop_count < self.__loop_limit)  
         string_list = list_callback(raw_msg) 
