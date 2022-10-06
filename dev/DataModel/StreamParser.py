@@ -15,7 +15,7 @@ class StreamParser:
 
         #incoming ais messages will be ignored if True
         self.drop_ais_messages = True
-        self.__stop = False
+        self._stop = False
 
         # keep track of the buffered messages in bytes, doesnt
         # seem to grow at a concerning rate 
@@ -32,25 +32,25 @@ class StreamParser:
 
         # Variables for logging the UDP stream
         self.log_file_name = log_stream[0]
-        self.__seconds = log_stream[1]
-        self.__timeout = time.time() + self.__seconds 
-        self.__log_stream = log_stream[2]  
+        self._seconds = log_stream[1]
+        self._timeout = time.time() + self._seconds 
+        self._log_stream = log_stream[2]  
 
-        self.__address = address 
-        self.__buffer_size = buffer_size
+        self._address = address 
+        self._buffer_size = buffer_size
         
         # This variable sets the limit for recursive iteration loops on parse
-        self.__loop_limit = loop_limit
+        self._loop_limit = loop_limit
 
         # Variables for console output   
-        self.__raw_verbose = verbosity[0]
-        self.__tag_verbose = verbosity[1]
-        self.__unparsed_tag_verbose = verbosity[2]
-        self.__parsed_message_verbose = verbosity[3]
-        self.__parse_error_verbose = verbosity[4]
+        self._raw_verbose = verbosity[0]
+        self._tag_verbose = verbosity[1]
+        self._unparsed_tag_verbose = verbosity[2]
+        self._parsed_message_verbose = verbosity[3]
+        self._parse_error_verbose = verbosity[4]
 
-        self.__s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.__s.connect(self.__address)
+        self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._s.connect(self._address)
 
     def pop_parsed_msg_list(self, index = None):
         if len(self.parsed_msg_list) < 1: return
@@ -61,10 +61,10 @@ class StreamParser:
             return self.parsed_msg_list.pop()
     
     def stop(self):
-        self.__stop = True
+        self._stop = True
         return
 
-    def __get_tag(self, raw_msg):
+    def _get_tag(self, raw_msg):
         tag = "unknown"
         decoded_msg = raw_msg.decode(encoding='ascii')
         decoded_msg = decoded_msg.replace(self.eol_separator, '') 
@@ -74,8 +74,8 @@ class StreamParser:
                 tag = decoded_msg.split(',')[0]  
         return tag
     
-    def __save_individual_tags(self, raw_msg, target_list, target_list_name, parsed_message = None, verbose = False):
-        tag = self.__get_tag(raw_msg)
+    def _save_individual_tags(self, raw_msg, target_list, target_list_name, parsed_message = None, verbose = False):
+        tag = self._get_tag(raw_msg)
 
         if target_list.count(tag) == 0:
             target_list.append(tag)
@@ -86,16 +86,16 @@ class StreamParser:
                 if parsed_message is not None:
                     print('saved parsed message is: {} \r\n'.format(repr(parsed_message)))
 
-    def __update_data_object(self, parsed_msg, raw_msg, what, verbose = False): 
+    def _update_data_object(self, parsed_msg, raw_msg, what, verbose = False): 
         #update this when extra information is added to udp message
-        tag = self.__get_tag(raw_msg) 
+        tag = self._get_tag(raw_msg) 
         self.parsed_msg_list.insert(0, (tag, parsed_msg)) 
         self.parsed_msg_list_size = sys.getsizeof(self.parsed_msg_list)
         if verbose:
             print('type {}{} Message: {}'.format(type(parsed_msg), what, repr(parsed_msg)))
         return
 
-    def __fix_bad_eol(self, raw_msg): 
+    def _fix_bad_eol(self, raw_msg): 
         parsed_string = raw_msg.decode(encoding='ascii') 
 
         # There's probably a better way to handle the bad double backslash
@@ -107,7 +107,7 @@ class StreamParser:
         string_list = parsed_string.strip().split(self.eol_separator)   
         return string_list
 
-    def __fix_collated_msgs(self, raw_msg): 
+    def _fix_collated_msgs(self, raw_msg): 
         parsed_string = raw_msg.decode(encoding='ascii') 
         for begin_identifier in self.msg_begin_identifiers:
             parsed_string = parsed_string.replace(begin_identifier, self.eol_separator + begin_identifier)
@@ -115,64 +115,64 @@ class StreamParser:
         string_list = parsed_string.strip().split(self.eol_separator)  
         return string_list
 
-    def __parse_nmea(self, raw_msg):
+    def _parse_nmea(self, raw_msg):
         decoded_msg = raw_msg.decode(encoding='ascii')
         parsed_msg = pynmea2.parse(decoded_msg)  
-        self.__update_data_object(parsed_msg, raw_msg, 'NMEA', self.__parsed_message_verbose)
-        self.__save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self.__tag_verbose)
+        self._update_data_object(parsed_msg, raw_msg, 'NMEA', self._parsed_message_verbose)
+        self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
 
-    def __parse_ais(self, raw_msg):
+    def _parse_ais(self, raw_msg):
         parsed_msg = ais_decode(raw_msg)
         
         if self.drop_ais_messages: return
 
-        self.__save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self.__tag_verbose)
-        self.__update_data_object(parsed_msg, raw_msg, 'AIS', self.__parsed_message_verbose)
+        self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
+        self._update_data_object(parsed_msg, raw_msg, 'AIS', self._parsed_message_verbose)
         
-    def __parse_list(self, raw_msg, list_callback, __loop_count):
-        assert(__loop_count < self.__loop_limit)  
+    def _parse_list(self, raw_msg, list_callback, _loop_count):
+        assert(_loop_count < self._loop_limit)  
         string_list = list_callback(raw_msg) 
         assert(len(string_list) > 1)
-        __loop_count += 1 
+        _loop_count += 1 
         for entry in string_list: 
             entry = entry + self.eol_separator  
             entry_bin = entry.encode(encoding="ascii") 
-            self.__parse_message(entry_bin, __loop_count)
-        return __loop_count
+            self._parse_message(entry_bin, _loop_count)
+        return _loop_count
 
-    def __parse_message(self, raw_msg, __loop_count = 0):    
-        try: self.__parse_nmea(raw_msg)
+    def _parse_message(self, raw_msg, _loop_count = 0):    
+        try: self._parse_nmea(raw_msg)
         except:
-            try: self.__parse_ais(raw_msg)
+            try: self._parse_ais(raw_msg)
             except:
-                try: __loop_count = self.__parse_list(raw_msg, self.__fix_bad_eol, __loop_count)                
+                try: _loop_count = self._parse_list(raw_msg, self._fix_bad_eol, _loop_count)                
                 except:
-                    try: __loop_count = self.__parse_list(raw_msg, self.__fix_collated_msgs, __loop_count)
+                    try: _loop_count = self._parse_list(raw_msg, self._fix_collated_msgs, _loop_count)
                     except:
                         try:
-                            self.__save_individual_tags(raw_msg, self.unknown_msg_tags, "Parse Failed", verbose = self.__unparsed_tag_verbose)
-                            if self.__parse_error_verbose:
+                            self._save_individual_tags(raw_msg, self.unknown_msg_tags, "Parse Failed", verbose = self._unparsed_tag_verbose)
+                            if self._parse_error_verbose:
                                 print('Unable to parse message: {}'.format(raw_msg))  
                         except:
-                            if self.__parse_error_verbose:
+                            if self._parse_error_verbose:
                                 print('Unable to parse or save message tag: {}'.format(raw_msg))
 
     def stream_udp_data(self):
-        if self.__log_stream:
+        if self._log_stream:
             f = open(self.log_file_name, "a")
 
         while True:
             time.sleep(0.5)
-            raw_msg = self.__s.recv(self.__buffer_size)
+            raw_msg = self._s.recv(self._buffer_size)
 
-            if self.__raw_verbose:
+            if self._raw_verbose:
                 print(raw_msg)
 
-            self.__parse_message(raw_msg) 
-            if self.__log_stream:
+            self._parse_message(raw_msg) 
+            if self._log_stream:
                 f.write(raw_msg)
-            if time.time() > self.__timeout and self.__log_stream:
+            if time.time() > self._timeout and self._log_stream:
                 f.close
                 break
-            if self.__stop:
+            if self._stop: #should make this consistent with other classes
                 break
