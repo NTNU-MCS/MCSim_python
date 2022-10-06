@@ -48,6 +48,14 @@ class StreamParser:
 
         self.__s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__s.connect(self.__address)
+
+    def pop_parsed_msg_list(self, index = None):
+        if len(self.parsed_msg_list) < 1: return
+
+        if index is not None:
+            return self.parsed_msg_list.pop(index)
+        else:
+            return self.parsed_msg_list.pop()
     
     def stop(self):
         self.__stop = True
