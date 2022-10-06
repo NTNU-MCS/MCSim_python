@@ -12,6 +12,7 @@ class StreamParser:
         # method for capping the size of this object might be necessary
         # that or figure out how to throw it to the heap
         self.parsed_msg_list = []
+        self.__stop = False
 
         # keep track of the buffered messages in bytes, doesnt
         # seem to grow at a concerning rate 
@@ -48,6 +49,10 @@ class StreamParser:
         self.__s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__s.connect(self.__address)
     
+    def stop(self):
+        self.__stop = True
+        return
+
     def __get_tag(self, raw_msg):
         tag = "unknown"
         decoded_msg = raw_msg.decode(encoding='ascii')
@@ -143,6 +148,7 @@ class StreamParser:
             f = open(self.log_file_name, "a")
 
         while True:
+            time.sleep(0.5)
             raw_msg = self.__s.recv(self.__buffer_size)
 
             if self.__raw_verbose:
@@ -153,4 +159,6 @@ class StreamParser:
                 f.write(raw_msg)
             if time.time() > self.__timeout and self.__log_stream:
                 f.close
+                break
+            if self.__stop:
                 break
