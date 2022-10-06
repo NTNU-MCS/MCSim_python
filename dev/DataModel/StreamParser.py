@@ -158,11 +158,11 @@ class StreamParser:
                                 print('Unable to parse or save message tag: {}'.format(raw_msg))
 
     def stream_udp_data(self):
+        print("launching parser")
         if self._log_stream:
             f = open(self.log_file_name, "a")
 
-        while True:
-            time.sleep(0.5)
+        while True: 
             raw_msg = self._s.recv(self._buffer_size)
 
             if self._raw_verbose:
