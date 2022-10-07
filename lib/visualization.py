@@ -116,7 +116,7 @@ def animate_ship_2D(t,eta,parP):
         An error message will be issued if dimensions of inputs are wrong.
         E.g.: 
             fig1, ax1 = plt.subplots()  # a figure with a single axes
-            parP = {'fig': fig1, 'ax': ax1, 'Loa': [Loa1, Loa2], 'type': ['ship', 'arrow'], 
+            parP = {'fig': fig1, 'ax': ax1, 'Loa': [12, 8], 'type': ['ship', 'arrow'], 
                     'setlim': True, 'grid': False, 'frame_delay': 50}
             ship_ani = animate_ship_2D(t,eta,parP)
     ----------------------------------------------------------------------------
@@ -148,7 +148,7 @@ def animate_ship_2D(t,eta,parP):
                 parP0['Loa'] = [parP['Loa'][ii]]
                 parP0['type'] = [parP['type'][ii]]
                 draw_ship_2D(eta[3*ii:3*ii+3, k:k+1],parP0)
-                # Adding inition position
+                # Adding initial position
                 ax0.plot(eta[3*ii+1, 0], eta[3*ii, 0], c='black', marker='o')
                 # Finding limits of axes
                 minNorth = min(minNorth, np.min(eta[3*ii, :]))
@@ -162,7 +162,7 @@ def animate_ship_2D(t,eta,parP):
                 ax0.set_xlim([minEast-Loa_max, maxEast+Loa_max])
                 ax0.set_ylim([minNorth-Loa_max, maxNorth+Loa_max])
 
-            # Adding Figure Labels
+            # Adding figure labels
             ax0.set_title('Ship trajectories \nTime = ' + str(np.round(t[k],    
                         decimals=2)) + ' sec.')
             ax0.set_xlabel('East (m)')
@@ -171,7 +171,7 @@ def animate_ship_2D(t,eta,parP):
                 ax0.grid()
             ax0.set_aspect('equal', 'box')
 
-        # Plotting the Animation
+        # Plotting the animation
         ship_ani = anim.FuncAnimation(fig0, animate_func, interval=parP['frame_delay'], frames=N)
 
         return ship_ani
