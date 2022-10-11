@@ -11,7 +11,7 @@ loop_limit = 1
 
 #raw_verbose, tag_verbose, unparsed_tag_verbose,
 #parsed_message_verbose, parse_error_verbose
-verbosity = (False, False, False, False, True)
+verbosity = (False, False, False, False, False)
 log_stream = ("datstream_5min.txt", 300, False)
 
 UDP_Stream = StreamParser(
@@ -32,8 +32,7 @@ thread_log_data.start()
 
 try:
     # wait around
-    while True:
-        print('Main thread waiting...')
+    while True: 
         sleep(0.5)
 except KeyboardInterrupt:
     # terminate main thread
