@@ -1,15 +1,16 @@
 import pandas as pd
 import numpy as np
 
-class SortedData:  
-    def __init__(self) -> None:
-        pass
+class SortedData(object):    
+    def __getitem__(self, item):
+        return getattr(self, item)
 
 class DataLogger:
     def __init__(self, stream_parser):
+        self.all_types = []
         self.def_unk_atr_name = 'unknown_'
         self._stream_parser = stream_parser
-        self.sorted_data = SortedData
+        self.sorted_data = SortedData()
         self._running = False
         self._buffer_data = stream_parser.parsed_msg_list
 
@@ -35,13 +36,18 @@ class DataLogger:
 
         if len(msg_atr) > 1: 
             for i, value in enumerate(msg_values):
-                # ToDo: change this 'str' to actual value type
-                dtypes.append((msg_atr[i], str)) 
+
+                # ToDo: handle conversion errors better 'ignore'
+                value = pd.to_numeric(value, errors='ignore')
+                dtypes.append((msg_atr[i], type(value))) 
         
         if len(unkown_msg_data) > 1: 
             for i, value in enumerate(unkown_msg_data):
+
+                # ToDo: handle conversion errors better 'ignore'
+                value = pd.to_numeric(value, errors='ignore')
                 atr_name = self.def_unk_atr_name + str(i)
-                dtypes.append((atr_name, str))  
+                dtypes.append((atr_name, type(value)))  
 
         dtypes = np.dtype(dtypes) 
         df = pd.DataFrame(np.empty(0, dtype=dtypes)) 
@@ -54,15 +60,19 @@ class DataLogger:
         if len(unkown_msg_data) > 1: 
             msg_values.extend(unkown_msg_data)
 
-            for i, value in enumerate(unkown_msg_data):
+            for i, _ in enumerate(unkown_msg_data):
                 atr_name = self.def_unk_atr_name + str(i)
                 msg_atr.append(atr_name)  
 
-        df = pd.DataFrame({msg_atr[i]: [msg_values[i]] for i in range(len(msg_values))})
+        # ToDo: handle conversion errors better 'ignore'
+        df = pd.DataFrame(
+            {msg_atr[i]: [pd.to_numeric(msg_values[i], errors='ignore')] 
+            for i in range(len(msg_values))}
+            )
+
         nmea_data = getattr(self.sorted_data, msg_id)   
         nmea_data = pd.concat([nmea_data, df], ignore_index=True)  
-        setattr(self.sorted_data, msg_id, nmea_data)  
-        print(getattr(self.sorted_data, msg_id))
+        setattr(self.sorted_data, msg_id, nmea_data)
         return
 
     def _log_buffered_message(self):
@@ -78,7 +88,7 @@ class DataLogger:
             self._create_new_attribute(message)
         
         self._log_nmea_data(message) 
-        self._stream_parser.pop_parsed_msg_list()
+        self._stream_parser.pop_parsed_msg_list() 
 
     def sort_buffered_data(self):
         self._running = True

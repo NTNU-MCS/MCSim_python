@@ -18,7 +18,7 @@ class StreamParser:
         self._stop = False
 
         # keep track of the buffered messages in bytes, doesnt
-        # seem to grow at a concerning rate 
+        # seem to grow at a concerning rate if at all
         self.parsed_msg_list_size = 0
 
         # [['bad_1','good_1'],['bad_2','good_2'],..,['bad_n','good_n']]
