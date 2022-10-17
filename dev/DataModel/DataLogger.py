@@ -1,18 +1,28 @@
 import pandas as pd
 import numpy as np
+from os import listdir
+from os.path import isfile, join
 
 class SortedData(object):    
     def __getitem__(self, item):
         return getattr(self, item)
 
 class DataLogger:
-    def __init__(self, stream_parser):
+    def __init__(self, stream_parser, save_headers, save_dataframes):
         self.all_types = []
+        
+        # define name for unknown atribute
         self.def_unk_atr_name = 'unknown_'
         self._stream_parser = stream_parser
         self.sorted_data = SortedData()
         self._running = False
+        self._save_headers = save_headers[0]
+        self._headers_path = save_headers[1]
+        self._save_df = save_dataframes[0]
+        self._dataframes_path = save_dataframes[1]
         self._buffer_data = stream_parser.parsed_msg_list
+
+        self._load_headers()
 
     def _get_nmea_attributes(self, nmea_object):
         t = type(nmea_object)
@@ -51,6 +61,9 @@ class DataLogger:
 
         dtypes = np.dtype(dtypes) 
         df = pd.DataFrame(np.empty(0, dtype=dtypes)) 
+
+        if self._save_headers:
+            self._save_headers_df(msg_id, df) 
         setattr(SortedData, msg_id, df) 
 
     def _log_nmea_data(self, message):
@@ -73,6 +86,7 @@ class DataLogger:
         nmea_data = getattr(self.sorted_data, msg_id)   
         nmea_data = pd.concat([nmea_data, df], ignore_index=True)  
         setattr(self.sorted_data, msg_id, nmea_data)
+        #print(self.sorted_data[msg_id])
         return
 
     def _log_buffered_message(self):
@@ -90,9 +104,45 @@ class DataLogger:
         self._log_nmea_data(message) 
         self._stream_parser.pop_parsed_msg_list() 
 
+    def _load_headers(self):
+        headers = []
+        names = []
+        dir_list = listdir(self._headers_path)
+
+        if len(dir_list) < 1:
+            return
+
+        print("loading headers...")
+        for name in dir_list:
+            file = join(self._headers_path, name)
+            if isfile(file):
+                headers.append(file)
+                names.append(name.split('.')[0])
+
+        for name, file in zip(names, headers):
+            df = pd.read_pickle(file)
+            setattr(SortedData, name, df) 
+
+    def _save_headers_df(self, name, df):
+        file_name = self._headers_path + '/' +  name + '.pkl'
+        df.to_pickle(file_name)
+
+    def _save_dataframes(self):
+        if self._save_df:
+            print("Saving data...")
+            for atr, df in self.sorted_data.__dict__.items(): 
+                filepath = join(self._dataframes_path, atr + '.csv')
+                df.to_csv(filepath)  
+            print("Data Saved")
+
+    def stop(self):
+        self._running = False
+
     def sort_buffered_data(self):
         self._running = True
 
         # ToDo: should make this consistent with other classes
         while self._running: 
             self._log_buffered_message()
+        self._save_dataframes()
+        print('Stopping DataLogger')
