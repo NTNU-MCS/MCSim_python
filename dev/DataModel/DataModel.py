@@ -14,6 +14,8 @@ loop_limit = 1
 verbosity = (False, False, False, False, False)
 log_stream = ("datstream_5min.txt", 300, False)
 
+df_aliases = [()]
+
 UDP_Stream = StreamParser(
     address=address,
     buffer_size=buffer_size,
@@ -28,14 +30,13 @@ save_dataframes = (True, df_path)
 UDP_DataLogger = DataLogger(
     stream_parser=UDP_Stream,
     save_headers=save_headers,
-    save_dataframes=save_dataframes
+    save_dataframes=save_dataframes,
+    df_aliases=df_aliases
     )
 
 # # Create new threads
-thread_udp_stream = Thread(target=UDP_Stream.stream_udp_data)
-thread_udp_stream.setDaemon(True)
-thread_log_data = Thread(target=UDP_DataLogger.sort_buffered_data)
-thread_log_data.setDaemon(True)
+thread_udp_stream = Thread(target=UDP_Stream.stream_udp_data) 
+thread_log_data = Thread(target=UDP_DataLogger.sort_buffered_data) 
 
 thread_udp_stream.start()
 thread_log_data.start()
@@ -49,4 +50,3 @@ except KeyboardInterrupt:
     UDP_Stream.stop()
     UDP_DataLogger.stop() 
     print('Exiting...')
-    sleep(1)#sketchy, get proper lock on thread exit

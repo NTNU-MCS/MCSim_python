@@ -158,7 +158,7 @@ class StreamParser:
                                 print('Unable to parse or save message tag: {}'.format(raw_msg))
 
     def stream_udp_data(self):
-        print("Launching parser")
+        print("StreamParser running.")
 
         self._running = True
 
@@ -172,11 +172,13 @@ class StreamParser:
                 print(raw_msg)
 
             self._parse_message(raw_msg) 
+
             if self._log_stream:
                 f.write(raw_msg)
+
             if time.time() > self._timeout and self._log_stream:
                 f.close
                 break
-
-        print("Stopping StreamParser")
-           
+            
+        # ToDo: handle loose ends on terminating process.
+        print("StreamParser Stopped.")           
