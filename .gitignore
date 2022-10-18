@@ -49,4 +49,4 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
-dev/DataModel/DataFrames/
+dev/DataModel/DataFrames/*.csv
