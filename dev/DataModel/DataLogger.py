@@ -64,7 +64,14 @@ class DataLogger:
                 value = pd.to_numeric(value, errors='ignore')
                 atr_name = self.def_unk_atr_name + str(i)
                 dtypes.append((atr_name, type(value)))  
-
+        try: 
+            alias_list = dict(self.df_aliases)[msg_id] 
+            if len(alias_list) == len(dtypes):
+                for i , item in enumerate(dtypes): 
+                    dtypes[i] = (alias_list[i], dtypes[i][1])  
+        except: 
+            pass
+        
         dtypes = np.dtype(dtypes) 
         df = pd.DataFrame(np.empty(0, dtype=dtypes)) 
 
@@ -82,6 +89,15 @@ class DataLogger:
             for i, _ in enumerate(unkown_msg_data):
                 atr_name = self.def_unk_atr_name + str(i)
                 msg_atr.append(atr_name)  
+
+        # ToDo: awful, inefficient, do better check and skip redundancy
+        try: 
+            alias_list = dict(self.df_aliases)[msg_id] 
+            if len(alias_list) == len(msg_atr):
+                for i , item in enumerate(msg_atr): 
+                    msg_atr[i] = alias_list[i]
+        except: 
+            pass
 
         # ToDo: handle conversion errors better 'ignore'
         df = pd.DataFrame(

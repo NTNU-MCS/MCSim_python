@@ -14,7 +14,7 @@ loop_limit = 1
 verbosity = (False, False, False, False, False)
 log_stream = ("datstream_5min.txt", 300, False)
 
-df_aliases = [()]
+df_aliases = [('$PSIMSNS',['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum'])]
 
 UDP_Stream = StreamParser(
     address=address,
@@ -26,12 +26,14 @@ headers_path = os.path.join(abs_path, './DataFrames/headers')
 save_headers = (True, headers_path)
 df_path = os.path.join(abs_path, './DataFrames')
 save_dataframes = (True, df_path)
+overwrite_headers = True
 
 UDP_DataLogger = DataLogger(
     stream_parser=UDP_Stream,
     save_headers=save_headers,
     save_dataframes=save_dataframes,
-    df_aliases=df_aliases
+    df_aliases=df_aliases,
+    overwrite_headers=overwrite_headers
     )
 
 # # Create new threads
