@@ -4,7 +4,7 @@
 # This code is part of the MCSim_python toolbox and repository.
 # Created By: M. Marley
 # Created Date: 2022-02-04
-# Revised: 2022-10-02 R. Skjetne Added draw_ship_2D(eta,parP)
+# Revised: 2022-10-19 R. Skjetne Added draw_ship_2D() and animate_ship_2D()
 #          <date>	<developer> <description>
 # Tested:  
 # 
@@ -65,9 +65,10 @@ def draw_ship_2D(eta,parP):
                 ax: Matplotlib axis handle to plot on 
                 Loa: 1xM array of Length overall of ship
                 type: 'ship' or 'arrow'
+                color: color of ship contour (color codes by matplotlib.plot)
         An error message will be issued if dimensions of inputs are wrong.
     ----------------------------------------------------------------------------
-    Created by: R. Skjetne on 2022-10-07
+    Created by: R. Skjetne on 2022-10-19
     Revised: N/A
     ---------------------------------------------------------------------------
     """         
@@ -96,7 +97,7 @@ def draw_ship_2D(eta,parP):
                 boat = np.dot(R,boat0)
     
             # Setting up plots and animation
-            ax1.plot(eta[1,ii]+boat[1,:], eta[0,ii]+boat[0,:])
+            ax1.plot(eta[1,ii]+boat[1,:], eta[0,ii]+boat[0,:], c=parP['color'])
         
 
 
@@ -108,8 +109,9 @@ def animate_ship_2D(t,eta,parP):
             parP: dict containing plotting parameters:
                 fig: Matplotlib figure handle to plot in 
                 ax: Matplotlib axis handle to plot on 
-                Loa: 1xN array of Length overall of ship
-                type: 'ship' or 'arrow'
+                Loa: 1xM array of Length overall of vessel
+                type: List of 'ship' or 'arrow' entries for M vessels.
+                color: List of colors of ship contours (color codes by matplotlib.plot)
                 setlim: True = set axis limits; False = don't
                 grid: True = grid on; False = grid off
                 frame_delay: Delay between frames in milliseconds
@@ -120,7 +122,7 @@ def animate_ship_2D(t,eta,parP):
                     'setlim': True, 'grid': False, 'frame_delay': 50}
             ship_ani = animate_ship_2D(t,eta,parP)
     ----------------------------------------------------------------------------
-    Created by: R. Skjetne on 2022-10-07
+    Created by: R. Skjetne on 2022-10-19
     Revised: N/A
     ---------------------------------------------------------------------------
     """     
@@ -147,6 +149,7 @@ def animate_ship_2D(t,eta,parP):
                 # Adding each ship contour 
                 parP0['Loa'] = [parP['Loa'][ii]]
                 parP0['type'] = [parP['type'][ii]]
+                parP0['color'] = parP['color'][ii]
                 draw_ship_2D(eta[3*ii:3*ii+3, k:k+1],parP0)
                 # Adding initial position
                 ax0.plot(eta[3*ii+1, 0], eta[3*ii, 0], c='black', marker='o')
