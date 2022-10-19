@@ -15,10 +15,10 @@ class StreamParser:
 
         #incoming ais messages will be ignored if True
         self.drop_ais_messages = True
-        self._stop = False
+        self._running = False
 
         # keep track of the buffered messages in bytes, doesnt
-        # seem to grow at a concerning rate 
+        # seem to grow at a concerning rate if at all
         self.parsed_msg_list_size = 0
 
         # [['bad_1','good_1'],['bad_2','good_2'],..,['bad_n','good_n']]
@@ -61,7 +61,7 @@ class StreamParser:
             return self.parsed_msg_list.pop()
     
     def stop(self):
-        self._stop = True
+        self._running = False
         return
 
     def _get_tag(self, raw_msg):
@@ -158,21 +158,27 @@ class StreamParser:
                                 print('Unable to parse or save message tag: {}'.format(raw_msg))
 
     def stream_udp_data(self):
+        print("StreamParser running.")
+
+        self._running = True
+
         if self._log_stream:
             f = open(self.log_file_name, "a")
 
-        while True:
-            time.sleep(0.5)
+        while self._running: 
             raw_msg = self._s.recv(self._buffer_size)
 
             if self._raw_verbose:
                 print(raw_msg)
 
             self._parse_message(raw_msg) 
+
             if self._log_stream:
                 f.write(raw_msg)
+
             if time.time() > self._timeout and self._log_stream:
                 f.close
                 break
-            if self._stop: #should make this consistent with other classes
-                break
+            
+        # ToDo: handle loose ends on terminating process.
+        print("StreamParser Stopped.")           
