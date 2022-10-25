@@ -157,7 +157,7 @@ class StreamParser:
                             if self._parse_error_verbose:
                                 print('Unable to parse or save message tag: {}'.format(raw_msg))
 
-    def stream_udp_data(self):
+    def start(self):
         print("StreamParser running.")
 
         self._running = True

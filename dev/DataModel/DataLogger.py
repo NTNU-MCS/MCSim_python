@@ -164,7 +164,7 @@ class DataLogger:
     def stop(self):
         self._running = False
 
-    def sort_buffered_data(self):
+    def start(self):
         self._running = True
         print('DataLogger running.')
 
