@@ -5,12 +5,16 @@ import pynmea2
 from pyais import decode as ais_decode
 import select
 import os
+import Decrypter
 
 class StreamParser:
     def __init__(self, address, buffer_size, loop_limit = 1, 
                 verbosity = (False, False, False, False, False), 
                 log_stream = ("datstream_5min.txt", 300, False),
-                socket_timeout = 5):
+                socket_timeout = 5, decrypter = Decrypter):
+
+        # decrypter
+        self._decrypter = decrypter
         
         # method for capping the size of this object might be necessary
         # that or figure out how to throw it to the heap
@@ -152,17 +156,21 @@ class StreamParser:
         except:
             try: self._parse_ais(raw_msg)
             except:
-                try: _loop_count = self._parse_list(raw_msg, self._fix_bad_eol, _loop_count)                
-                except:
-                    try: _loop_count = self._parse_list(raw_msg, self._fix_collated_msgs, _loop_count)
+                try: 
+                    a = self._decrypter.decrypt(raw_msg)
+                    print(a)
+                except:  
+                    try: _loop_count = self._parse_list(raw_msg, self._fix_bad_eol, _loop_count)                
                     except:
-                        try:
-                            self._save_individual_tags(raw_msg, self.unknown_msg_tags, "Parse Failed", verbose = self._unparsed_tag_verbose)
-                            if self._parse_error_verbose:
-                                print('Unable to parse message: {}'.format(raw_msg))  
+                        try: _loop_count = self._parse_list(raw_msg, self._fix_collated_msgs, _loop_count)
                         except:
-                            if self._parse_error_verbose:
-                                print('Unable to parse or save message tag: {}'.format(raw_msg))
+                            try:
+                                self._save_individual_tags(raw_msg, self.unknown_msg_tags, "Parse Failed", verbose = self._unparsed_tag_verbose)
+                                if self._parse_error_verbose:
+                                    print('Unable to parse message: {}'.format(raw_msg))  
+                            except:
+                                if self._parse_error_verbose:
+                                    print('Unable to parse or save message tag: {}'.format(raw_msg))
 
     def start(self):
         print("StreamParser running.")

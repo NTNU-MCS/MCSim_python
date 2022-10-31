@@ -1,17 +1,17 @@
 from threading import Thread
 from DataVisualizer import DataVisualizer
 from StreamParser import StreamParser
-from DataLogger import DataLogger 
-import matplotlib.pyplot as plt
+from DataLogger import DataLogger  
 from time import sleep 
 import pathlib
 from datetime import datetime
 import os
+from Decrypter import Decrypter
 
 abs_path = pathlib.Path(__file__).parent.resolve()
 #global: fagitrelay.it.ntnu.no
 #local: gunnerus.local
-address = ("gunnerus.local", 25508)
+address = ("fagitrelay.it.ntnu.no", 25508)
 buffer_size = 4096
 loop_limit = 1
 
@@ -26,11 +26,18 @@ log_name = './datastream_'+ date_time + '_' + str(log_time) + 's.txt'
 log_path = os.path.join(abs_path, 'DataStreams', log_name)
 log_stream = (log_path, log_time, save_logs)
 
+key_path = os.path.join(abs_path, 'nmeatools')
+
+UDP_Decrypter = Decrypter( 
+    key_path = key_path
+)
+
 UDP_Stream = StreamParser(
     address=address,
     buffer_size=buffer_size,
     verbosity=verbosity,
-    log_stream=log_stream)
+    log_stream=log_stream,
+    decrypter=UDP_Decrypter)
 
 headers_path = os.path.join(abs_path, './DataFrames/headers')
 save_headers = (True, headers_path)
@@ -39,7 +46,7 @@ df_path = os.path.join(abs_path, './DataFrames')
 # ToDo: create class for holding these tuples
 df_aliases = [('$PSIMSNS',['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum'])]
 save_dataframes = (True, df_path)
-overwrite_headers = False
+overwrite_headers = True
 
 UDP_DataLogger = DataLogger(
     stream_parser=UDP_Stream,
@@ -52,11 +59,9 @@ UDP_DataLogger = DataLogger(
 # Create new threads
 thread_udp_stream = Thread(target=UDP_Stream.start) 
 thread_log_data = Thread(target=UDP_DataLogger.start) 
-#thread_visualize_data = Thread(target=UDP_Visualizer.start) 
 
 thread_udp_stream.start()
 thread_log_data.start()
-#thread_visualize_data.start()
 
 try:
     # wait around, catch keyboard interrupt  
@@ -68,4 +73,3 @@ except KeyboardInterrupt:
     UDP_Stream.stop()
     UDP_DataLogger.stop() 
     print('Exiting...')
-    plt.show(block = True)
