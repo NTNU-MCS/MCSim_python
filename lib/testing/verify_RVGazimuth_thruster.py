@@ -43,7 +43,7 @@ import thrusters as th
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+plt.close('all')
 
 varname = ['u','v','r','angle','revs','Fx','Fy','Ftot','forceangle']
 varunit = ['m/s','m/s','deg/s','deg','RPM','N','N','N','deg']
@@ -79,7 +79,7 @@ Fyv2 = np.zeros(np.size(us))
 angle=10
 v=0
 revss=df.revs.unique()
-revss = [150,165,180]
+revss = [150,180,220]
 
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
@@ -113,21 +113,23 @@ plt.legend(legstr)
 plt.xlabel('u [m/s]')
 plt.ylabel('Fx [N]')
 plt.title(titstr)
+plt.savefig('Fxversusu.pdf')
 
 plt.figure(2)
 plt.legend(legstr)
 plt.xlabel('u [m/s]')
 plt.ylabel('Fy [N]')
 plt.title(titstr)
+plt.savefig('Fyversusu.pdf')
 
 # =============================================================================
 # Plots versus azimuth angle
 # =============================================================================
 
-u=6
+u=5
 v=1
 revss=df.revs.unique()
-revss = [150,165,180]
+revss = [150,180,220]
 angles=df.angle.unique()
 Fxv1 = np.zeros(np.size(angles))
 Fyv1 = np.zeros(np.size(angles))
@@ -210,6 +212,7 @@ plt.legend(legstr)
 plt.xlabel('v m/s')
 plt.ylabel('Fx [N]')
 plt.title(titstr)
+plt.savefig('Fxversusswayspeed.pdf')
 
 plt.figure(6)
 plt.legend(legstr)

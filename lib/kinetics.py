@@ -138,7 +138,7 @@ def dot_nu6_man_lq(eta,nu,Uc,betaC,F,parV):
 
     #Nonlinear damping matrix
     D=Dl+Du*abs(nu_r[0])+Dv*abs(nu_r[1])+Dp*abs(nu[3])+Dr*abs(nu[5])
-    
+#    print(D@nu_r)
 
     d_nu6 = invM@(F+Fcor+Fcur_inertia-D@nu_r-K@eta)
     return d_nu6

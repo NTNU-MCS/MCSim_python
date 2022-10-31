@@ -178,6 +178,7 @@ def dot_RVG_Man_6DOF_lq(x,u,w,parV,parA,parS):
 
     Fx, Fy = th.RVGazimuth_man(u_t,v_t,azi,revs) 
     ForceAct = np.array([Fx,Fy,0,-Fy*rt[2],0,Fy*rt[0]])    
+
     
     #viscous damping in sway and heave
     dvv = parV['dvv'] #sway quadratic force coefficient
@@ -189,6 +190,7 @@ def dot_RVG_Man_6DOF_lq(x,u,w,parV,parA,parS):
     Fvv = -np.array([0,f_vv,0,-f_vv*z_b,0,0]) #sway/roll visc force vector
     
     F=Fvv+ForceAct+w
+#    print(F)
 
     dx = np.zeros(len(x))
     

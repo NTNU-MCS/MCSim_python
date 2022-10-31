@@ -37,7 +37,7 @@ B = vessel['Bm'][0,0] #Breadth middle
 T = vessel['Tm'][0,0] #Draught middle
 Mrb = np.array(vessel['Mrb']) #rigid body mass
 A = np.array(vessel['A']) #added mass (frequency and velocity dependent)
-freq_index = 35 #index, use low-frequency for manuevering
+freq_index = 35 #index, should use low-frequency for manuevering but values seem off
 vel_index = 4#index, 5.2m/s=10knots, Gunnerus cruising speed
 reference_velocity = vessel['velocities'][0,vel_index]
 Ma = A[:,:,freq_index,vel_index]
@@ -53,6 +53,11 @@ Ba = Ba[:,:,freq_index,vel_index]
 #Ma[1,3]=Ma[1,3]*10
 #Ma[3,5]=0
 #Ma[5,3]=0
+
+#Ma[2,:] = Ma[2,:]*0 
+#Ma[4,:] = Ma[4,:]*0
+#Ma[4,:] = Ma[2,:]*0 
+#Ma[2,:] = Ma[4,:]*0
 
 #Reducing linear damping, since quadratic drag is added below. 
 
@@ -73,9 +78,9 @@ Cdy=0.5 #sway drag coefficient
 Du = Dl*0
 Du[0,0]=0.5*Cdx*B*T*10**3 #quadratic damping coefficient in surge
 Dv = Dl*0
-Dv[1,1]=0.5*Cdx*L*T*10**3 #quadratic damping coefficient in sway
+Dv[1,1]=0.5*Cdy*L*T*10**3 #quadratic damping coefficient in sway
 Dr = Dl*0
-Dr[5,5] = Dv[1,1]*L**4/64 #quadratic damping coefficient in yaw
+Dr[5,5] = 0.75*Dv[1,1]*L**4/64 #quadratic damping coefficient in yaw
 
 
 #parV = {'Mrb':Mrb,'Ma':Ma,'Dl':Dl,'Du':Du,'Dr':Dr,'Dv':Dv,
@@ -97,7 +102,7 @@ Volume = Mass/1025#m^3, displacement
 BM = GM_veres-COB #used to calculate Iwp
 Iwp =  Volume*BM #second area moment of waterplane
 COG_lightship = 0.68# rel waterline, from stability report
-COG = 1.5#COG_lightship #assume COG of full ship is equal to lightship COG.
+COG = 2#COG_lightship #assume COG of full ship is equal to lightship COG.
 K44 = 9.81*1025*(Iwp+Volume*(COB-COG)) #estimated roll stiffness
 
 K[3,3] = K44

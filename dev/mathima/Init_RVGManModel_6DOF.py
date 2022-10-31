@@ -73,7 +73,7 @@ parA = pickle.load( open("data\\parA_RVG.pkl", "rb" ) )
 # simulation parameters
 # =============================================================================
 tmax=1000
-dt=0.1 #time step
+dt=0.5 #time step
 tvec = np.linspace(0,tmax,int(tmax/dt)+1)
 
 Uc=np.array(0.5) #current speed

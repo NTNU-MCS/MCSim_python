@@ -38,11 +38,15 @@ def plot_timeseries(t,x,parP):
     scale = parP['scale']
     # Created: 2022-02-04 M.Marley 
     for i1 in range(np.shape(x)[0]):
-        plt.figure(i1+parP['fig0'])#,figsize=parP['figsize'], clear='True')
+        
+        if 'figsize' in parP:
+            plt.figure(i1+parP['fig0'],figsize=parP['figsize'], clear='True')
+        else:
+            plt.figure(i1+parP['fig0'])#
         plt.plot(t,x[i1,:]*scale[i1])
         plt.title(parP['titles'][i1])
         plt.ylabel(parP['units'][i1])
         plt.xlabel('Time [s]')
-
+        plt.tight_layout()
     return 
 
