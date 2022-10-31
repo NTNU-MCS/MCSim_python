@@ -5,23 +5,33 @@ from DataLogger import DataLogger
 import matplotlib.pyplot as plt
 from time import sleep 
 import pathlib
+from datetime import datetime
 import os
 
-address = ("fagitrelay.it.ntnu.no", 25508)
+abs_path = pathlib.Path(__file__).parent.resolve()
+#global: fagitrelay.it.ntnu.no
+#local: gunnerus.local
+address = ("gunnerus.local", 25508)
 buffer_size = 4096
 loop_limit = 1
 
 #raw_verbose, tag_verbose, unparsed_tag_verbose,
 #parsed_message_verbose, parse_error_verbose
 verbosity = (False, False, False, False, False)
-log_stream = ("datstream_5min.txt", 300, False)
+now = datetime.now()
+date_time = now.strftime("%m%d%y_%H-%M-%S")
+save_logs = False
+log_time = 3600
+log_name = './datastream_'+ date_time + '_' + str(log_time) + 's.txt'
+log_path = os.path.join(abs_path, 'DataStreams', log_name)
+log_stream = (log_path, log_time, save_logs)
 
 UDP_Stream = StreamParser(
     address=address,
     buffer_size=buffer_size,
-    verbosity=verbosity)
+    verbosity=verbosity,
+    log_stream=log_stream)
 
-abs_path = pathlib.Path(__file__).parent.resolve()
 headers_path = os.path.join(abs_path, './DataFrames/headers')
 save_headers = (True, headers_path)
 df_path = os.path.join(abs_path, './DataFrames')
@@ -39,13 +49,6 @@ UDP_DataLogger = DataLogger(
     overwrite_headers=overwrite_headers
     )
 
-# plot_info = [('$PSIMSNS', ('timestamp', 'head_deg'))]
-
-# UDP_Visualizer = DataVisualizer(
-#     data_logger=UDP_DataLogger,
-#     plot_info=plot_info
-# )
-
 # Create new threads
 thread_udp_stream = Thread(target=UDP_Stream.start) 
 thread_log_data = Thread(target=UDP_DataLogger.start) 
@@ -57,15 +60,8 @@ thread_log_data.start()
 
 try:
     # wait around, catch keyboard interrupt  
-    #plt.ion()
     while True: 
-        sleep(0.5) 
-        # x = UDP_DataLogger.sorted_data['$PSIMSNS']['timestamp']
-        # y = UDP_DataLogger.sorted_data['$PSIMSNS']['head_deg'] 
-        # plt.plot(x, y)
-        # plt.title('$PSIMSNS')  
-        # plt.draw()
-        # plt.pause(0.1)  
+        sleep(0.5)
 
 except KeyboardInterrupt:
     # terminate main thread 

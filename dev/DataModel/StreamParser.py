@@ -3,11 +3,14 @@ import time
 import sys
 import pynmea2 
 from pyais import decode as ais_decode
+import select
+import os
 
 class StreamParser:
     def __init__(self, address, buffer_size, loop_limit = 1, 
                 verbosity = (False, False, False, False, False), 
-                log_stream = ("datstream_5min.txt", 300, False)):
+                log_stream = ("datstream_5min.txt", 300, False),
+                socket_timeout = 5):
         
         # method for capping the size of this object might be necessary
         # that or figure out how to throw it to the heap
@@ -33,7 +36,7 @@ class StreamParser:
         # Variables for logging the UDP stream
         self.log_file_name = log_stream[0]
         self._seconds = log_stream[1]
-        self._timeout = time.time() + self._seconds 
+        self._timeout = 0
         self._log_stream = log_stream[2]  
 
         self._address = address 
@@ -49,7 +52,8 @@ class StreamParser:
         self._parsed_message_verbose = verbosity[3]
         self._parse_error_verbose = verbosity[4]
 
-        self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket_timeout = socket_timeout
+        self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
         self._s.connect(self._address)
 
     def pop_parsed_msg_list(self, index = None):
@@ -128,6 +132,9 @@ class StreamParser:
 
         self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
         self._update_data_object(parsed_msg, raw_msg, 'AIS', self._parsed_message_verbose)
+    
+    def _parse_encoded(self, raw_msg):
+        return
         
     def _parse_list(self, raw_msg, list_callback, _loop_count):
         assert(_loop_count < self._loop_limit)  
@@ -162,10 +169,18 @@ class StreamParser:
 
         self._running = True
 
-        if self._log_stream:
+        if self._log_stream: 
+            self._timeout = time.time() + self._seconds 
             f = open(self.log_file_name, "a")
+            print("Opening save file:", self.log_file_name)
 
-        while self._running: 
+        ready = select.select([self._s], [], [], self._socket_timeout)
+
+        if not ready[0]:
+            print("Connection Timed out, closing...") 
+
+        while self._running and ready[0]: 
+
             raw_msg = self._s.recv(self._buffer_size)
 
             if self._raw_verbose:
@@ -174,11 +189,17 @@ class StreamParser:
             self._parse_message(raw_msg) 
 
             if self._log_stream:
-                f.write(raw_msg)
-
+                f.write(raw_msg.decode(encoding='ascii'))
+                elapsed = self._seconds - round(self._timeout - time.time())
+                #print("Elapsed", elapsed, "of", self._seconds, "seconds")
+            
             if time.time() > self._timeout and self._log_stream:
-                f.close
+                f.close()
                 break
             
         # ToDo: handle loose ends on terminating process.
+        if self._log_stream:
+                print("writing done, closing file ", self.log_file_name )
+                f.close()
+
         print("StreamParser Stopped.")           
