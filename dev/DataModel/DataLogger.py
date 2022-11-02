@@ -26,6 +26,7 @@ class DataLogger:
         self._buffer_data = stream_parser.parsed_msg_list
         self._overwrite_headers = overwrite_headers
         self._verbose = verbose
+        self.metadata_atr_names = ('unix_time', 'seq_num', 'src_id', 'src_name')
 
         if not self._overwrite_headers:
             self._load_headers()
@@ -47,7 +48,7 @@ class DataLogger:
         return(msg_atr, msg_values, unkown_msg_data)
 
     def _create_new_attribute(self, message):
-        msg_id, msg_atr, msg_values, unkown_msg_data = message
+        msg_id, msg_atr, msg_values, unkown_msg_data, metadata = message
         dtypes = []  
 
         if len(msg_atr) > 1: 
@@ -71,6 +72,14 @@ class DataLogger:
                     dtypes[i] = (alias_list[i], dtypes[i][1])  
         except: 
             pass
+
+        if metadata is not None: 
+            for i, value in enumerate(metadata):
+
+                # ToDo: handle conversion errors better 'ignore'
+                value = pd.to_numeric(value, errors='ignore')
+                atr_name = self.metadata_atr_names[i]
+                dtypes.append((atr_name, type(value)))  
         
         dtypes = np.dtype(dtypes) 
         df = pd.DataFrame(np.empty(0, dtype=dtypes)) 
@@ -80,7 +89,7 @@ class DataLogger:
         setattr(SortedData, msg_id, df) 
 
     def _log_nmea_data(self, message):
-        msg_id, msg_atr, msg_values, unkown_msg_data = message
+        msg_id, msg_atr, msg_values, unkown_msg_data, metadata = message
 
         # ToDo: Probably very inefficient
         if len(unkown_msg_data) > 1: 
@@ -88,7 +97,7 @@ class DataLogger:
 
             for i, _ in enumerate(unkown_msg_data):
                 atr_name = self.def_unk_atr_name + str(i)
-                msg_atr.append(atr_name)  
+                msg_atr.append(atr_name)   
 
         # ToDo: awful, inefficient, do better check and skip redundancy
         try: 
@@ -98,6 +107,11 @@ class DataLogger:
                     msg_atr[i] = alias_list[i]
         except: 
             pass
+
+        # ToDo: Probably very inefficient x2
+        if metadata is not None: 
+            msg_values.extend(metadata)
+            msg_atr.extend(self.metadata_atr_names)
 
         # ToDo: handle conversion errors better 'ignore'
         df = pd.DataFrame(
@@ -115,13 +129,18 @@ class DataLogger:
         return
 
     def _log_buffered_message(self):
-        if len(self._buffer_data) < 1: return 
-        nmea_message = self._buffer_data[-1][1]
+        if len(self._buffer_data) < 1: return  
 
-        # ToDo: update id when new data is available from stream
+        nmea_message = self._buffer_data[-1][1] 
         msg_id = self._buffer_data[-1][0]
-        msg_atr, msg_values, unkown_msg_data = self._get_nmea_attributes(nmea_message) 
-        message = (msg_id, msg_atr, msg_values, unkown_msg_data)
+        msg_atr, msg_values, unkown_msg_data = self._get_nmea_attributes(nmea_message)  
+
+        if len(self._buffer_data[-1]) is 3:
+            metadata = self._buffer_data[-1][2]
+        else:
+            metadata = None
+
+        message = (msg_id, msg_atr, msg_values, unkown_msg_data, metadata)
 
         if not hasattr(SortedData, msg_id):
             self._create_new_attribute(message)

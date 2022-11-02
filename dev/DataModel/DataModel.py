@@ -44,16 +44,21 @@ save_headers = (True, headers_path)
 df_path = os.path.join(abs_path, './DataFrames')
 
 # ToDo: create class for holding these tuples
-df_aliases = [('$PSIMSNS',['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum'])]
+df_aliases = [
+    ('$PSIMSNS',['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum']),
+    ('$PSIMSNS_ext',['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum']),
+]
 save_dataframes = (True, df_path)
 overwrite_headers = True
+dl_verbose = False
 
 UDP_DataLogger = DataLogger(
     stream_parser=UDP_Stream,
     save_headers=save_headers,
     save_dataframes=save_dataframes,
     df_aliases=df_aliases,
-    overwrite_headers=overwrite_headers
+    overwrite_headers=overwrite_headers,
+    verbose=dl_verbose
     )
 
 # Create new threads

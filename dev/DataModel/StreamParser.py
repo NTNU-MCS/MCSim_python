@@ -13,6 +13,7 @@ class StreamParser:
                 log_stream = ("datstream_5min.txt", 300, False),
                 socket_timeout = 5, decrypter = Decrypter):
 
+        self.extended_msg_suffix  = '_ext'
         # decrypter
         self._decrypter = decrypter
         
@@ -94,11 +95,15 @@ class StreamParser:
                 if parsed_message is not None:
                     print('saved parsed message is: {} \r\n'.format(repr(parsed_message)))
 
-    def _update_data_object(self, parsed_msg, raw_msg, what, verbose = False): 
+    def _update_data_object(self, parsed_msg, raw_msg, what, verbose = False, metadata = None): 
         #update this when extra information is added to udp message
         tag = self._get_tag(raw_msg) 
-        self.parsed_msg_list.insert(0, (tag, parsed_msg)) 
-        self.parsed_msg_list_size = sys.getsizeof(self.parsed_msg_list)
+        if metadata is None:
+            self.parsed_msg_list.insert(0, (tag, parsed_msg)) 
+        else:
+            tag = tag + self.extended_msg_suffix
+            self.parsed_msg_list.insert(0, (tag, parsed_msg, metadata)) 
+        self.parsed_msg_list_size = sys.getsizeof(self.parsed_msg_list) 
         if verbose:
             print('type {}{} Message: {}'.format(type(parsed_msg), what, repr(parsed_msg)))
         return
@@ -137,8 +142,21 @@ class StreamParser:
         self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
         self._update_data_object(parsed_msg, raw_msg, 'AIS', self._parsed_message_verbose)
     
-    def _parse_encoded(self, raw_msg):
-        return
+    def _parse_decrypted(self, decrypted):
+        metadata, msg = decrypted 
+        
+        #inconsistent 
+        try: parsed_msg = pynmea2.parse(msg)
+        except:
+            try:  
+                parsed_msg = ais_decode(msg)
+                if self.drop_ais_messages: return
+            except: 
+                if self._parse_error_verbose:
+                                    print('Unable to parse or save message tag: {}'.format(msg))
+        raw_msg = msg.encode('ascii')
+        self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
+        self._update_data_object(parsed_msg, raw_msg, 'encrypted', self._parsed_message_verbose, metadata)
         
     def _parse_list(self, raw_msg, list_callback, _loop_count):
         assert(_loop_count < self._loop_limit)  
@@ -157,8 +175,7 @@ class StreamParser:
             try: self._parse_ais(raw_msg)
             except:
                 try: 
-                    a = self._decrypter.decrypt(raw_msg)
-                    print(a)
+                    self._parse_decrypted(self._decrypter.decrypt(raw_msg))  
                 except:  
                     try: _loop_count = self._parse_list(raw_msg, self._fix_bad_eol, _loop_count)                
                     except:

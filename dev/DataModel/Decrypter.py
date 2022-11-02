@@ -44,10 +44,13 @@ class Decrypter:
         key_name, content = seq[0], seq[1:]
         
         key_name = key_name.strip() + '.key.pub' 
+        # use regex
         key_name = key_name.replace('/','_').replace(' ','_')
+
         if len(content) > 1: content = ''.join(content)
 
         cypher = content[0].encode('ascii') 
+
         if key_name in self._keyring:
             key = self._keyring[key_name] 
         else: 
@@ -58,6 +61,26 @@ class Decrypter:
             self._keyring[key_name] = key
         
         return key, cypher
+    
+    def _clean_message(self, decrypted): 
+        decrypted = decrypted.decode("ascii", 'backslashreplace')
+        decrypted = re.sub(r"([\\][x][a-z0-9]{2})+", "", decrypted) 
+        decrypted = decrypted[1:]
+        seq = decrypted.split(';')
+        metadata_str, msg = seq[0], seq[1:]
+        if len(msg) > 1: msg = ''.join(msg) 
+        unix_time, seq_num, src_id, src_name = metadata_str.split(',') 
+        
+        metadata = (
+            float(unix_time[1:]), # bit is appended to string somehow  
+            int(seq_num), 
+            int(src_id), 
+            src_name
+        )
+
+        if type(msg) is list: msg = msg[0]
+
+        return metadata, msg 
         
     def decrypt(self, raw_msg): 
         full_content = self._assemble(raw_msg) 
@@ -67,6 +90,5 @@ class Decrypter:
         key, cypher = self._get_key_cypher(full_content)
         raw_cipher_data = b64decode(cypher) 
         decrypted = key.encrypt(raw_cipher_data, 0)
-        decrypted = decrypted[0].decode("ascii", 'backslashreplace')
-        decrypted = re.sub(r"([\\][x][a-z0-9]{2})+", "", decrypted) 
-        return decrypted[1:]
+        clean = self._clean_message(decrypted[0])
+        return clean
