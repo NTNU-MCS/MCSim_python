@@ -1,5 +1,4 @@
 from threading import Thread
-from DataVisualizer import DataVisualizer
 from StreamParser import StreamParser
 from DataLogger import DataLogger  
 from time import sleep 

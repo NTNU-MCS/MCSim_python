@@ -68,7 +68,7 @@ class StreamParser:
             return self.parsed_msg_list.pop(index)
         else:
             return self.parsed_msg_list.pop()
-    
+
     def stop(self):
         self._running = False
         return
@@ -82,7 +82,7 @@ class StreamParser:
             if decoded_msg[0] == begin_identifier:
                 tag = decoded_msg.split(',')[0]  
         return tag
-    
+
     def _save_individual_tags(self, raw_msg, target_list, target_list_name, parsed_message = None, verbose = False):
         tag = self._get_tag(raw_msg)
 
@@ -141,7 +141,7 @@ class StreamParser:
 
         self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
         self._update_data_object(parsed_msg, raw_msg, 'AIS', self._parsed_message_verbose)
-    
+
     def _parse_decrypted(self, decrypted):
         metadata, msg = decrypted 
         
@@ -157,7 +157,7 @@ class StreamParser:
         raw_msg = msg.encode('ascii')
         self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
         self._update_data_object(parsed_msg, raw_msg, 'encrypted', self._parsed_message_verbose, metadata)
-        
+
     def _parse_list(self, raw_msg, list_callback, _loop_count):
         assert(_loop_count < self._loop_limit)  
         string_list = list_callback(raw_msg) 
