@@ -1,31 +1,32 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+import easygui
+import pandas as pd 
+import folium
+import math 
 
-class DataVisualizer:    
-    def __init__ (self, data_logger, plot_info):
-        self._data_logger = data_logger
-        self._plot_info = plot_info 
+path = easygui.fileopenbox()
+df = pd.read_csv(path)
+gunnerus_locations = df[['lat','lat_dir','lon','lon_dir']]
 
-    def plot_data(self, atr, x, y):
-        plt.ion()
-        x = self._data_logger.sorted_data[atr][x]
-        print(x)
-        y = self._data_logger.sorted_data[atr][y]
-        print(y)
-        plt.gca().cla() # optionally clear axes
-        plt.plot(x, y)
-        plt.title(atr)  
-        return plt
-    
-    def stop(self):
-        self._running = False
-    
-    # def start(self):
-    #     self._running = True
-    #     print('DataVisualizer running.')
-    #     while self._running:
-    #         self._plot_data()
-        
-    #     print('DataVisualizer stopped.')
-    
+def lonlat_2_en(long_lat):
+    new_lon_lat = pd.DataFrame(columns=['lat', 'lon'])
+    #lat: ddmm.mm dir  
+    new_lon_lat['lat'] =  long_lat.apply(lambda x: deg_2_dec(x.lat, x.lat_dir), axis = 1)
+
+    #lon: ddmm.mm dir 
+    new_lon_lat['lon'] = long_lat.apply(lambda x: deg_2_dec(x.lon, x.lon_dir), axis = 1)
+    return new_lon_lat
+
+def deg_2_dec(coord, dir):
+    dir = 1
+    if dir == 'S' or dir == 'W': dir = -1
+    deg = math.trunc(coord/100)
+    #minute conversion is messed up, fix 
+    dec = (coord/100 - deg)*(10/6)
+    return dir*(deg + dec)
+
+gunnerus_locations = lonlat_2_en(gunnerus_locations)
+
+map = folium.Map(location=[gunnerus_locations.lat.mean(), gunnerus_locations.lon.mean()], zoom_start=30, control_scale=True)
+
+folium.PolyLine(gunnerus_locations, color='red', weight=3, opacity=0.8).add_to(map)
+map.save('index.html')
