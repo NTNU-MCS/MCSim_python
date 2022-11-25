@@ -185,7 +185,6 @@ class DataLogger:
 
             print("Saving data...")
             for atr, df in self.sorted_data.__dict__.items(): 
-                print(atr)
                 filepath = join(self._dataframes_path, atr + '.csv')
                 df.to_csv(filepath)  
             print("Data Saved.")
