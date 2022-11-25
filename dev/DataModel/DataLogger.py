@@ -25,7 +25,8 @@ class DataLogger:
         self._dataframes_path = save_dataframes[1]         
         self._buffer_data = stream_parser.parsed_msg_list
         self._overwrite_headers = overwrite_headers
-        self._verbose = verbose
+        self._log_verbose = verbose[0]
+        self._buffer_verbose = verbose[1]
         self.metadata_atr_names = ('unix_time', 'seq_num', 'src_id', 'src_name')
         self._frame_transform = frame_transform
         self.simulation_data_name = "simulation_frame"
@@ -125,13 +126,15 @@ class DataLogger:
         nmea_data = pd.concat([nmea_data, df], ignore_index=True)  
         setattr(self.sorted_data, msg_id, nmea_data)
 
-        if self._verbose:
+        if self._log_verbose:
             print(self.sorted_data[msg_id])
 
         return
 
     def _log_buffered_message(self):
-        if len(self._buffer_data) < 1: return  
+        if len(self._buffer_data) < 1: 
+            if self._buffer_verbose:  print('Buffer Empty')
+            return  
 
         nmea_message = self._buffer_data[-1][1] 
         msg_id = self._buffer_data[-1][0]

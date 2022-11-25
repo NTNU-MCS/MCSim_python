@@ -1,5 +1,6 @@
 from threading import Thread
 from StreamParser import StreamParser
+from LogParser import LogParser
 from DataLogger import DataLogger  
 from SimulationTransform import SimulationTransform
 from time import sleep 
@@ -7,6 +8,7 @@ import pathlib
 from datetime import datetime
 import os
 from Decrypter import Decrypter
+import easygui
 
 abs_path = pathlib.Path(__file__).parent.resolve()
 #global: fagitrelay.it.ntnu.no
@@ -27,17 +29,24 @@ log_path = os.path.join(abs_path, 'DataStreams', log_name)
 log_stream = (log_path, log_time, save_logs)
 
 key_path = os.path.join(abs_path, 'nmeatools')
+UDP_Decrypter = Decrypter(key_path = key_path)
 
-UDP_Decrypter = Decrypter( 
-    key_path = key_path
-)
+# if True a log can be selected and used as the data source
+parse_saved_log = False
 
-UDP_Stream = StreamParser(
-    address=address,
-    buffer_size=buffer_size,
-    verbosity=verbosity,
-    log_stream=log_stream,
-    decrypter=UDP_Decrypter)
+if parse_saved_log:
+    load_path = easygui.fileopenbox()
+    UDP_Stream = LogParser(
+        path = load_path,
+        verbosity=verbosity, 
+        decrypter=UDP_Decrypter)
+else:
+    UDP_Stream = StreamParser(
+        address=address,
+        buffer_size=buffer_size,
+        verbosity=verbosity,
+        log_stream=log_stream,
+        decrypter=UDP_Decrypter)
 
 simulation_origo_offset = (0, 0, 0)
 
@@ -57,7 +66,7 @@ df_aliases = [
 
 save_dataframes = (True, df_path)
 overwrite_headers = True
-dl_verbose = False
+dl_verbose = (False, parse_saved_log)
 
 UDP_DataLogger = DataLogger(
     stream_parser=UDP_Stream,
