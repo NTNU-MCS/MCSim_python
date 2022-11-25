@@ -8,7 +8,7 @@ class SortedData(object):
         return getattr(self, item)
 
 class DataLogger:
-    def __init__(self, stream_parser, save_headers, save_dataframes, df_aliases, overwrite_headers=False, verbose=False):
+    def __init__(self, stream_parser, save_headers, save_dataframes, df_aliases, overwrite_headers=False, frame_transform=None, verbose=False):
         
         #attribute aliases for incoming messages
         self.df_aliases = df_aliases
@@ -27,6 +27,8 @@ class DataLogger:
         self._overwrite_headers = overwrite_headers
         self._verbose = verbose
         self.metadata_atr_names = ('unix_time', 'seq_num', 'src_id', 'src_name')
+        self._frame_transform = frame_transform
+        self.simulation_data_name = "simulation_frame"
 
         if not self._overwrite_headers:
             self._load_headers()
@@ -174,8 +176,16 @@ class DataLogger:
 
     def _save_dataframes(self):
         if self._save_df:
+
+            if self._frame_transform is not None:
+                if hasattr(self.sorted_data, '$GPGGA_ext') and hasattr(self.sorted_data, '$GPGGA_ext'): 
+                    self._frame_transform.gps_data = self.sorted_data['$GPGGA_ext']
+                    self._frame_transform.attitude_data = self.sorted_data['$PSIMSNS_ext']
+                    setattr(self.sorted_data, self.simulation_data_name, self._frame_transform.get_converted_frame()) 
+
             print("Saving data...")
             for atr, df in self.sorted_data.__dict__.items(): 
+                print(atr)
                 filepath = join(self._dataframes_path, atr + '.csv')
                 df.to_csv(filepath)  
             print("Data Saved.")

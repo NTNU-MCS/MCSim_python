@@ -20,7 +20,6 @@ def deg_2_dec(coord, dir):
     dir = 1
     if dir == 'S' or dir == 'W': dir = -1
     deg = math.trunc(coord/100)
-    #minute conversion is messed up, fix 
     dec = (coord/100 - deg)*(10/6)
     return dir*(deg + dec)
 

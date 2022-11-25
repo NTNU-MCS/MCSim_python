@@ -1,6 +1,7 @@
 from threading import Thread
 from StreamParser import StreamParser
 from DataLogger import DataLogger  
+from SimulationTransform import SimulationTransform
 from time import sleep 
 import pathlib
 from datetime import datetime
@@ -38,6 +39,12 @@ UDP_Stream = StreamParser(
     log_stream=log_stream,
     decrypter=UDP_Decrypter)
 
+simulation_origo_offset = (0, 0, 0)
+
+UDP_Sim_Frame_transform = SimulationTransform(
+offsets=simulation_origo_offset
+)
+
 headers_path = os.path.join(abs_path, './DataFrames/headers')
 save_headers = (True, headers_path)
 df_path = os.path.join(abs_path, './DataFrames')
@@ -47,6 +54,7 @@ df_aliases = [
     ('$PSIMSNS',['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum']),
     ('$PSIMSNS_ext',['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum']),
 ]
+
 save_dataframes = (True, df_path)
 overwrite_headers = True
 dl_verbose = False
@@ -57,6 +65,7 @@ UDP_DataLogger = DataLogger(
     save_dataframes=save_dataframes,
     df_aliases=df_aliases,
     overwrite_headers=overwrite_headers,
+    frame_transform=UDP_Sim_Frame_transform,
     verbose=dl_verbose
     )
 
