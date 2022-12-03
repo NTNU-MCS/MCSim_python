@@ -32,7 +32,7 @@ key_path = os.path.join(abs_path, 'nmeatools')
 UDP_Decrypter = Decrypter(key_path = key_path)
 
 # if True a log can be selected and used as the data source
-parse_saved_log = False
+parse_saved_log = True
 
 if parse_saved_log:
     load_path = easygui.fileopenbox()
@@ -48,7 +48,14 @@ else:
         log_stream=log_stream,
         decrypter=UDP_Decrypter)
 
-simulation_origo_offset = (0, 0, 0)
+simulation_origo_offset = ( 
+    10.3929167, 
+    63.435166667,
+    0,
+    0,
+    6378137,
+    6356752.3142
+    )
 
 UDP_Sim_Frame_transform = SimulationTransform(
 offsets=simulation_origo_offset

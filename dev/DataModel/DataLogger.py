@@ -69,7 +69,7 @@ class DataLogger:
                 atr_name = self.def_unk_atr_name + str(i)
                 dtypes.append((atr_name, type(value)))  
         try: 
-            alias_list = dict(self.df_aliases)[msg_id] 
+            alias_list = dict(self.df_aliases)[msg_id]
             if len(alias_list) == len(dtypes):
                 for i , item in enumerate(dtypes): 
                     dtypes[i] = (alias_list[i], dtypes[i][1])  
@@ -189,7 +189,7 @@ class DataLogger:
             print("Saving data...")
             for atr, df in self.sorted_data.__dict__.items(): 
                 filepath = join(self._dataframes_path, atr + '.csv')
-                df.to_csv(filepath)  
+                df.to_csv(filepath, index=False)  
             print("Data Saved.")
 
     def stop(self):
