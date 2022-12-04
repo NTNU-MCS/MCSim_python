@@ -2,12 +2,14 @@ from threading import Thread
 from StreamParser import StreamParser
 from LogParser import LogParser
 from DataLogger import DataLogger  
+from SimulationClient import SimulationClient
 from SimulationTransform import SimulationTransform
 from time import sleep 
 import pathlib
 from datetime import datetime
 import os
 from Decrypter import Decrypter
+import socket
 import easygui
 
 abs_path = pathlib.Path(__file__).parent.resolve()
@@ -23,7 +25,7 @@ verbosity = (False, False, False, False, False)
 now = datetime.now()
 date_time = now.strftime("%m%d%y_%H-%M-%S")
 save_logs = False
-log_time = 3600
+log_time = 60
 log_name = './datastream_'+ date_time + '_' + str(log_time) + 's.txt'
 log_path = os.path.join(abs_path, 'DataStreams', log_name)
 log_stream = (log_path, log_time, save_logs)
@@ -32,7 +34,7 @@ key_path = os.path.join(abs_path, 'nmeatools')
 UDP_Decrypter = Decrypter(key_path = key_path)
 
 # if True a log can be selected and used as the data source
-parse_saved_log = True
+parse_saved_log = False
 
 if parse_saved_log:
     load_path = easygui.fileopenbox()
@@ -49,12 +51,10 @@ else:
         decrypter=UDP_Decrypter)
 
 simulation_origo_offset = ( 
-    10.3929167, 
-    63.435166667,
-    0,
-    0,
-    6378137,
-    6356752.3142
+    10.3929167,   #lon offset
+    63.435166667, #lat offset
+    0,            #altitude offset
+    0             #heading offset
     )
 
 UDP_Sim_Frame_transform = SimulationTransform(
@@ -85,12 +85,23 @@ UDP_DataLogger = DataLogger(
     verbose=dl_verbose
     )
 
+sc_address = (socket.gethostname(), 5005)
+sc_buffer_sz = 1024
+
+UDP_SimulationClient = SimulationClient(
+    address=sc_address, 
+    buffer_size=sc_buffer_sz,
+    data_logger=UDP_DataLogger,
+    sim_transform=UDP_Sim_Frame_transform)
+
 # Create new threads
 thread_udp_stream = Thread(target=UDP_Stream.start) 
-thread_log_data = Thread(target=UDP_DataLogger.start) 
+thread_log_data = Thread(target=UDP_DataLogger.start)
+thread_sim_client = Thread(target=UDP_SimulationClient.start) 
 
 thread_udp_stream.start()
 thread_log_data.start()
+thread_sim_client.start()
 
 try:
     # wait around, catch keyboard interrupt  
@@ -101,4 +112,5 @@ except KeyboardInterrupt:
     # terminate main thread 
     UDP_Stream.stop()
     UDP_DataLogger.stop() 
+    UDP_SimulationClient.stop()
     print('Exiting...')

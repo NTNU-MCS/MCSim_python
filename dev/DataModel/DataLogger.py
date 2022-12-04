@@ -181,7 +181,7 @@ class DataLogger:
         if self._save_df:
 
             if self._frame_transform is not None:
-                if hasattr(self.sorted_data, '$GPGGA_ext') and hasattr(self.sorted_data, '$GPGGA_ext'): 
+                if hasattr(self.sorted_data, '$GPGGA_ext') and hasattr(self.sorted_data, '$PSIMSNS_ext'): 
                     self._frame_transform.gps_data = self.sorted_data['$GPGGA_ext']
                     self._frame_transform.attitude_data = self.sorted_data['$PSIMSNS_ext']
                     setattr(self.sorted_data, self.simulation_data_name, self._frame_transform.get_converted_frame()) 

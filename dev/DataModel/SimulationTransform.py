@@ -10,10 +10,6 @@ class SimulationTransform:
         self._y_o = offsets[1]
         self._z_o = offsets[2]
         self._angle_offset = offsets[3]
-        self.r_M = offsets[4]
-        self.r_m = offsets[5]
-        self.f = (self.r_M - self.r_m) / self.r_M
-        self.e_sq = self.f * (2 - self.f)
 
     def deg_2_dec(self, coord, dir):
         dir = 1
@@ -23,10 +19,18 @@ class SimulationTransform:
         return dir*(deg + dec)
 
     def get_frame_dec(self):
-        transformed_heading = self.attitude_data[['head_deg']]
-        transformed_locations = self.gps_data[['lat','lat_dir','lon','lon_dir', 'altitude']]
+        transformed_heading = self.attitude_data[['unix_time', 'head_deg']]
+        transformed_locations = self.gps_data[
+            ['unix_time', 'lat','lat_dir','lon','lon_dir', 'altitude']]
 
-        transformed_data = pd.concat([transformed_locations, transformed_heading], axis = 1)  
+        transformed_data = pd.merge(
+            transformed_heading,
+            transformed_locations, 
+            on='unix_time', how='outer')
+
+        transformed_data = transformed_data.fillna(method='bfill').fillna(method='ffill')
+            
+        #pd.concat([transformed_locations, transformed_heading], axis = 1)  
                 #lat: ddmm.mm dir  
         transformed_data['lat'] =  transformed_data.apply(
             lambda x: self.deg_2_dec(x.lat, x.lat_dir), 
@@ -56,8 +60,7 @@ class SimulationTransform:
         return nstr
 
     def get_converted_frame(self): 
-        temp = self.gps_data[['unix_time']]
-        temp = pd.concat([temp, self.get_frame_dec()], axis = 1)  
+        temp = self.get_frame_dec()
 
         temp['unix_time'] = temp.apply(
             lambda x: self.adjust_2_sim(x.unix_time, 11),
