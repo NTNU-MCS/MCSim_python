@@ -56,12 +56,13 @@ else:
 simulation_origo_offset = ( 
     10.3929167,   #lon offset
     63.435166667, #lat offset
-    0,            #altitude offset
+    12,            #altitude offset
     0             #heading offset
     )
 
 UDP_Sim_Frame_transform = SimulationTransform(
-offsets=simulation_origo_offset
+offsets=simulation_origo_offset,
+join_type='' #'merge' merges frames on unix time, else concatenates
 )
 
 headers_path = os.path.join(abs_path, './DataFrames/headers')
