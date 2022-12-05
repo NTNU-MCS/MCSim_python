@@ -2,7 +2,7 @@ from threading import Thread
 from StreamParser import StreamParser
 from LogParser import LogParser
 from DataLogger import DataLogger  
-from SimulationClient import SimulationClient
+from SimulationServer import SimulationServer
 from SimulationTransform import SimulationTransform
 from time import sleep 
 import pathlib
@@ -11,6 +11,9 @@ import os
 from Decrypter import Decrypter
 import socket
 import easygui
+
+#Todo: add flush() functionality across related classes to purge data 
+#and prevent stack overflow / slowdown over extended use 
 
 abs_path = pathlib.Path(__file__).parent.resolve()
 #global: fagitrelay.it.ntnu.no
@@ -85,10 +88,10 @@ UDP_DataLogger = DataLogger(
     verbose=dl_verbose
     )
 
-sc_address = (socket.gethostname(), 5005)
+sc_address = (socket.gethostname(), 5005) 
 sc_buffer_sz = 1024
 
-UDP_SimulationClient = SimulationClient(
+UDP_SimulationServer = SimulationServer(
     address=sc_address, 
     buffer_size=sc_buffer_sz,
     data_logger=UDP_DataLogger,
@@ -97,7 +100,7 @@ UDP_SimulationClient = SimulationClient(
 # Create new threads
 thread_udp_stream = Thread(target=UDP_Stream.start) 
 thread_log_data = Thread(target=UDP_DataLogger.start)
-thread_sim_client = Thread(target=UDP_SimulationClient.start) 
+thread_sim_client = Thread(target=UDP_SimulationServer.start) 
 
 thread_udp_stream.start()
 thread_log_data.start()
@@ -112,5 +115,5 @@ except KeyboardInterrupt:
     # terminate main thread 
     UDP_Stream.stop()
     UDP_DataLogger.stop() 
-    UDP_SimulationClient.stop()
+    UDP_SimulationServer.stop()
     print('Exiting...')

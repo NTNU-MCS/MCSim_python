@@ -1,7 +1,7 @@
 import socket
 import pandas as pd
 
-class SimulationClient:
+class SimulationServer:
     def __init__(self, address, buffer_size, data_logger, sim_transform):
         self._ip = address[0]
         self._port = address[1]

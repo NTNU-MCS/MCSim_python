@@ -42,7 +42,7 @@ class SimulationTransform:
             lambda x: self.deg_2_dec(x.lon, x.lon_dir),
             axis = 1
             )
-        transformed_data = transformed_data.dropna()  
+        transformed_data = transformed_data.dropna().sort_values(by=['unix_time'])  
         return transformed_data
 
     def adjust_2_sim(self, num, d_len = 15):
@@ -93,6 +93,6 @@ class SimulationTransform:
                 "unix_time": "TimeInSecondsPosix", 
                 "head_deg": "V1Heading"
                 }
-            ) 
+            )
 
         return unity_frame
