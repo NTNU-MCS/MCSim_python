@@ -9,7 +9,8 @@ class SimulationTransform:
         self._x_o = offsets[0]
         self._y_o = offsets[1]
         self._z_o = offsets[2]
-        self._angle_offset = offsets[3]
+        self._heading_offset = offsets[3]
+        self._heading_dir = offsets[4]
         self._join_type = join_type
 
     def deg_2_dec(self, coord, dir):
@@ -88,7 +89,7 @@ class SimulationTransform:
         ) 
 
         temp['head_deg'] = temp.apply(
-            lambda x: self.adjust_2_sim(x.head_deg),
+            lambda x: self.adjust_2_sim((self._heading_dir*x.head_deg) - self._heading_offset),
             axis=1
         )
 
