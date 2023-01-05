@@ -115,67 +115,13 @@ def RVGazimuth_man(u,v,angle,revs):
     
     
     
-    Ct=2.2 #thruster coefficient (just a guess)   
+    Ct=2.2*1 #*2.8 #thruster coefficient (just a guess)   
     Fthrust = Ct*revs**2 #propeller thrust force
     
     #decompose loads in body-fixed surge and sway force
     Fx = Fthrust*np.cos(angle)+Ffoilx*np.cos(angle)-Ffoily*np.sin(angle)
     Fy = Fthrust*np.sin(angle)+Ffoilx*np.sin(angle)+Ffoily*np.cos(angle)
     return Fx, Fy
-
-def RVGazimuth_man_simpl(u,v,angle,revs):
-    
-    """
-    Temporary function to calibrate a control design model of the azimuth thruster
-    
-    Input: 
-         u: surge speed (at thruster location) [m/s] 
-         v: sway speed (at thruster location) [m/s] 
-         angle: azimuth angle [rad] 
-         revs: rpm 
-    Output: 
-         Fx, Fy: surge and sway force [N]
-    """
-
-    
-    V = np.sqrt(u**2+v**2) #total speed
-    
-    inflow_angle = np.arctan2(v,u) #inflow angle
-
-    aoa = -inflow_angle+angle #foil angle of attack
-    
-
-    Cd = 0.3+np.abs(aoa)*0.3 #drag coefficient
-    Cd = 0.4
-
-    Cl = 0.5*np.sin(2*aoa)
-    Cl = aoa
-
-
-    A=9 #rudder area
-    rho = 1000 #fluid density
-    
-    
-
-    Fdrag = 0.5*rho*A*Cd*V**2 #drag force on foil (parallel to fluid velocity)
-    Flift = 0.5*rho*A*Cl*V**2 #lift force on foil (normal to fluid velocity)
-    Ffoilx = -Fdrag*np.cos(aoa)+Flift*np.sin(aoa) #force in foil x direction
-    Ffoily = Flift*np.cos(aoa)+Fdrag*np.sin(aoa) #force in foil y direction
-    Ffoilx = -Fdrag*1+Flift*aoa #force in foil x direction
-    Ffoily = Flift*1+Fdrag*aoa #force in foil y direction
-        
-    
-    
-    Ct=2.2 #thruster coefficient (just a guess)   
-    Fthrust = Ct*revs**2 #propeller thrust force
-    
-    #decompose loads in body-fixed surge and sway force
-    Fx = Fthrust-0.5*rho*A*Cd*u**2#+Ffoilx-Ffoily*angle
-    Fy = Fthrust*angle+0.5*rho*A*V**2*0.9*angle-0.5*rho*A*u*v*1.4
-    
-
-
-    return Fx, Fy  
 
     
 

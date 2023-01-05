@@ -64,7 +64,7 @@ plt.close('all')
 # load model data
 # =============================================================================
 #vessel data
-parV = pickle.load( open(model_path+"\\data\\parV_RVG6DOF.pkl", "rb" ) )
+parV = pickle.load( open(model_path+"\\data\\parV_RVG3DOF.pkl", "rb" ) )
 
 #actuator data
 parA = pickle.load( open(model_path+"\\data\\parA_RVG.pkl", "rb" ) )
