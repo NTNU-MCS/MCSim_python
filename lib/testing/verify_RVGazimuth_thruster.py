@@ -76,7 +76,7 @@ Fxv2 = np.zeros(np.size(us))
 Fyv2 = np.zeros(np.size(us))
 
 
-angle=10
+angle=0
 v=0
 revss=df.revs.unique()
 revss = [150,180,220]

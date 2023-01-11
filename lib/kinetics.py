@@ -142,3 +142,67 @@ def dot_nu6_man_lq(eta,nu,Uc,betaC,F,parV):
 
     d_nu6 = invM@(F+Fcor+Fcur_inertia-D@nu_r-K@eta)
     return d_nu6
+
+def Cor4(nu,M,zref):
+    """Simplified 4DOF Coriolis force
+       Input 
+           nu: 4x1 vector of body-fixed velocities 
+           M: 4x4 inertia matrix 
+           zref: Reference point for roll moment
+       Output 
+           F: 4x1 force vector
+    """
+    # Created: 2022-11-28 M.Marley 
+    # Tested: -
+    u = nu[0] #DOF1 surge
+    v = nu[1] #DOF2 sway
+    p = nu[2] #DOF4 yaw
+    r = nu[3] #DOF6 roll
+    
+    M11 = M[0,0]
+    M22 = M[1,1]
+    M44 = M[2,2]
+    M66 = M[3,3]
+
+    M24 = M[1,2]
+    M42 = M[2,1]
+
+    M26 = M[1,3]
+    M62 = M[3,1]
+
+    M46 = M[2,3]
+    M64 = M[3,2]
+    
+    F1 = -M22*v*r-0.5*(M26+M62)*r**2
+    F2 = M11*u*r
+    F4 = -F2*zref
+    F6 = (M22-M11)*u*v+0.5*(M26+M62)*u*r
+    
+    F = np.array([F1,F2,F4,F6])
+
+    return F
+
+def crossflowdrag(v,r,parV):
+    """Crossflow drag model
+       Input 
+           v: sway fluid relative speed 
+           r: yaw rate
+           parV: dict containing parameters
+       Output 
+           F2,F6: sway and yaw force
+    """    
+    x = parV['x_visc']
+    dx = x[1]-x[0]
+    
+    Cd = parV['Cdy']
+    Tm = parV['Tm'] #draft (moulded)
+    
+    vl = v+x*r #sway speed at each section
+    dF = 0.5*1025*Cd*Tm*np.abs(vl)*vl*dx #force at each section
+    F2 = np.sum(dF)
+    F6 = np.sum(dF*x)
+    
+    
+    return F2,F6
+
+

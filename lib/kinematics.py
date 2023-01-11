@@ -78,6 +78,7 @@ def Rotz(angle):
           [0, 0, 1]])
     return Rz
 
+
 def Rotzyx(angles):
     """Rotation matrix about zyx-axis 
        Input 
@@ -144,3 +145,34 @@ def dot_eta6(eta,nu):
     d_eta6[3:6] = T@nu[3:6]
     
     return d_eta6
+
+def Rot_planar(angle):
+    """Planar rotation matrix R: \R -> SO(2)
+       Input 
+           angle: in radians  
+       Output 
+           R: 2x2 matrix 
+    """
+    # Created: 2022-11-15 M.Marley 
+    # Tested: 2022-11-15 M.Marley   
+    R = np.array([[np.cos(angle), -np.sin(angle)],
+          [np.sin(angle), np.cos(angle)]])
+    return R
+
+def dot_eta4(psi,nu):
+    """4DOF kinematics
+       Input 
+           angle: in radians  
+       Output 
+           d_eta4: derivatives
+    """
+    # Created: 2022-11-15 M.Marley 
+    # Tested: 2022-11-15 M.Marley   
+    
+    R = np.array([[np.cos(psi), -np.sin(psi),0,0],
+          [np.sin(psi), np.cos(psi),0,0],
+          [0,0,1,0],[0,0,0,1]])
+    
+    d_eta4 = R@nu
+    
+    return d_eta4
