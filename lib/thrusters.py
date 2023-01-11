@@ -4,8 +4,8 @@
 # This code is part of the MCSim_python toolbox and repository.
 # Created By: M. Marley
 # Created Date: 2022-02-04
-# Revised: 2022-03-24	M. Marley added RVG thruster model
-#          <date>	<developer> <description>
+# Revised: 2022-03-24 M. Marley    added RVG thruster model
+#          2023-01-11 R. Skjetne   changed forceAzi3 and forceAzi6 to output tau.
 # Tested:  2022-02-04 M.Marley input/output relations for individual functions
 #          2022-03-24 M.Marley see RVGazimuth_man
 # 
@@ -27,13 +27,13 @@ import kinematics as km
 # =============================================================================
 def forceAzi3(force,azi,loc):
     """
-    3DOF body-fixed forces from azimuth thruster    
+    3DOF body-fixed loads from azimuth thruster.    
     Input: 
          force: thruster force 
          azi: azimuth angle 
          loc: location of thruster in body-fixed coordinate system 
     Output: 
-         F: 3DOF force vector 
+         tau: 3DOF thruster load vector; [surge, sway, yaw] 
     """
     # Created: 2022-02-04 M.Marley 
     # Tested: 2022-02-04 M.Marley  
@@ -41,29 +41,31 @@ def forceAzi3(force,azi,loc):
     eps1 = np.array([1,0,0])
     S = km.Smat(loc)
     R = km.Rotz(azi)   
-    F6 =  force*np.concatenate((R@eps1, S@R@eps1)) #6DOF vector
-    F = F6[[0,1,5]] #3DOF vector
+    tau6 =  force*np.concatenate((R@eps1, S@R@eps1)) #6DOF vector
+    tau = tau6[[0,1,5]] #3DOF vector
     
-    return F
+    return tau
+
 
 def forceAzi6(force,azi,loc):
     """
-    3DOF body-fixed forces from azimuth thruster    
+    6DOF body-fixed loads from azimuth thruster.    
     Input: 
          force: thruster force 
          azi: azimuth angle 
          loc: location of thruster in body-fixed coordinate system 
     Output: 
-         F: 6DOF force vector 
+         tau: 6DOF thruster load vector; [surge, sway, heave, roll, pitch, yaw] 
     """
     # Created: 2022-02-04 M.Marley 
     # Tested: 2022-02-04 M.Marley  
     eps1 = np.array([1,0,0])
     S = km.Smat(loc)
     R = km.Rotz(azi)   
-    F =  force*np.concatenate((R@eps1, S@R@eps1)) #6DOF vector
+    tau =  force*np.concatenate((R@eps1, S@R@eps1)) #6DOF vector
     
-    return F
+    return tau
+
 
 def RVGazimuth_man(u,v,angle,revs):
 
@@ -81,7 +83,7 @@ def RVGazimuth_man(u,v,angle,revs):
          angle: azimuth angle [rad] 
          revs: rpm 
     Output: 
-         Fx, Fy: surge and sway force [N]
+         Fx, Fy: surge and sway forces [N]
     """
     # Created: 2022-03-24 M.Marley 
     # Tested: 2022-03-24 M.Marley
@@ -123,6 +125,7 @@ def RVGazimuth_man(u,v,angle,revs):
     Fy = Fthrust*np.sin(angle)+Ffoilx*np.sin(angle)+Ffoily*np.cos(angle)
     return Fx, Fy
 
+
 def RVGazimuth_man_simpl(u,v,angle,revs):
     
     """
@@ -134,7 +137,7 @@ def RVGazimuth_man_simpl(u,v,angle,revs):
          angle: azimuth angle [rad] 
          revs: rpm 
     Output: 
-         Fx, Fy: surge and sway force [N]
+         Fx, Fy: surge and sway forces [N]
     """
 
     
