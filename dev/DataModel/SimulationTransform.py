@@ -3,7 +3,7 @@ import math
 import pymap3d as pm
 
 class SimulationTransform:
-    def __init__(self, offsets, join_type = 'merge'):
+    def __init__(self, offsets=[0,0,0,0,0], join_type = 'merge'):
         self.gps_data = pd.DataFrame()
         self.attitude_data = pd.DataFrame()
         self._x_o = offsets[0]
@@ -64,7 +64,12 @@ class SimulationTransform:
         if len(nstr) > d_len: nstr = nstr[:d_len]
 
         return nstr
-
+    
+    def get_xyz(self, northings, eastings, altitude):
+        x,y,_ = pm.geodetic2enu(northings, eastings, altitude, self._y_o, self._x_o, self._z_o) 
+        z = altitude - self._z_o
+        return x,y,z
+        
     def get_converted_frame(self): 
         temp = self.get_frame_dec()
 

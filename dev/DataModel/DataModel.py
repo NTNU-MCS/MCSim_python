@@ -2,6 +2,7 @@ from threading import Thread
 from StreamParser import StreamParser
 from LogParser import LogParser
 from DataLogger import DataLogger  
+from SimulationLogger import SimulationLogger
 from SimulationServer import SimulationServer
 from SimulationTransform import SimulationTransform
 import pathlib
@@ -38,7 +39,7 @@ class DataModel:
         self.UDP_Decrypter = Decrypter(key_path = self.key_path)
 
         # if True a log can be selected and used as the data source
-        self.parse_saved_log = False
+        self.parse_saved_log = True
 
         if self.parse_saved_log:
             self.load_path = easygui.fileopenbox()
@@ -58,8 +59,8 @@ class DataModel:
             10.3929167,   #lon offset
             63.435166667, #lat offset
             12,           #altitude offset
-            180, #-90          #heading offset
-            -1,           #heading dir 
+            0, #-90          #heading offset
+            0,           #heading dir 
             )
 
         self.UDP_Sim_Frame_transform = SimulationTransform(
@@ -77,28 +78,42 @@ class DataModel:
             ('$PSIMSNS_ext',['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum']),
         ]
 
-        self.save_dataframes = (True, self.df_path)
+        self.save_dataframes = (False, self.df_path)
         self.overwrite_headers = True
-        self.dl_verbose = (False, self.parse_saved_log)
+        self.dl_verbose = (False, False)
 
-        self.UDP_DataLogger = DataLogger(
-            stream_parser=self.UDP_Stream,
-            save_headers=self.save_headers,
-            save_dataframes=self.save_dataframes,
-            df_aliases=self.df_aliases,
-            overwrite_headers=self.overwrite_headers,
-            frame_transform=self.UDP_Sim_Frame_transform,
-            verbose=self.dl_verbose
-            )
+        self.feedSimulation = True
 
-        self.sc_address = (socket.gethostname(), 5005) 
+        if (self.feedSimulation):
+            self.UDP_DataLogger = SimulationLogger(
+                stream_parser=self.UDP_Stream,
+                save_headers=self.save_headers,
+                df_aliases=self.df_aliases,
+                overwrite_headers=self.overwrite_headers,
+                verbose=self.dl_verbose  
+                )
+        else:
+            self.UDP_DataLogger = DataLogger(
+                stream_parser=self.UDP_Stream,
+                save_headers=self.save_headers,
+                save_dataframes=self.save_dataframes,
+                df_aliases=self.df_aliases,
+                overwrite_headers=self.overwrite_headers,
+                frame_transform=self.UDP_Sim_Frame_transform,
+                verbose=self.dl_verbose
+                )
+        
+        self.local_address = (socket.gethostname(), 5000) 
         self.sc_buffer_sz = 1024
 
         self.UDP_SimulationServer = SimulationServer(
-            address=self.sc_address, 
+            address=self.local_address, 
             buffer_size=self.sc_buffer_sz,
             data_logger=self.UDP_DataLogger,
-            sim_transform=self.UDP_Sim_Frame_transform) 
+            ws_enable=True,
+            ws_address="ws://127.0.0.1:8000",
+            transform=self.UDP_Sim_Frame_transform
+            ) 
 
         # Create new threads
         self.thread_udp_stream = Thread(target=self.UDP_Stream.start) 

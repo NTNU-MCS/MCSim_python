@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
-from os import listdir
 from os.path import isfile, join
+from Logger import Logger
 
 class SortedData(object):    
     def __getitem__(self, item):
         return getattr(self, item)
 
-class DataLogger:
+class DataLogger(Logger):
     def __init__(self, stream_parser, save_headers, save_dataframes, df_aliases, overwrite_headers=False, frame_transform=None, verbose=False):
         
         #attribute aliases for incoming messages
@@ -33,22 +33,6 @@ class DataLogger:
 
         if not self._overwrite_headers:
             self._load_headers()
-
-    def _get_nmea_attributes(self, nmea_object):
-        t = type(nmea_object)
-        msg_values = []        
-        msg_atr = []
-        unkown_msg_data = []
-
-        for i , v in enumerate(nmea_object.data): 
-            if i >= len(t.fields):
-                unkown_msg_data.append(v)
-                continue
-            name = t.fields[i][1]
-            msg_atr.append(name)
-            msg_values.append(getattr(nmea_object, name))
-
-        return(msg_atr, msg_values, unkown_msg_data)
 
     def _create_new_attribute(self, message):
         msg_id, msg_atr, msg_values, unkown_msg_data, metadata = message
@@ -153,26 +137,6 @@ class DataLogger:
         self._log_nmea_data(message) 
         self._stream_parser.pop_parsed_msg_list() 
 
-    def _load_headers(self):
-        headers = []
-        names = []
-        dir_list = listdir(self._headers_path)
-
-        if len(dir_list) < 1:
-            return
-
-        print("Loading headers...")
-        for name in dir_list:
-            file = join(self._headers_path, name)
-            if isfile(file):
-                headers.append(file)
-                names.append(name.split('.')[0])
-
-        for name, file in zip(names, headers):
-            df = pd.read_pickle(file)
-            setattr(SortedData, name, df) 
-        print("Headers Loaded.")
-
     def _save_headers_df(self, name, df):
         file_name = self._headers_path + '/' +  name + '.pkl'
         df.to_pickle(file_name)
@@ -191,9 +155,6 @@ class DataLogger:
                 filepath = join(self._dataframes_path, atr + '.csv')
                 df.to_csv(filepath, index=False)  
             print("Data Saved.")
-
-    def stop(self):
-        self._running = False
 
     def start(self):
         self._running = True

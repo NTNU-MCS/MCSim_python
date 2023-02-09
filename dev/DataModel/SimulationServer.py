@@ -1,56 +1,77 @@
 import socket
 import pandas as pd
+import websocket 
+import json
+from SimulationTransform import SimulationTransform
+
 
 class SimulationServer:
-    def __init__(self, address, buffer_size, data_logger, sim_transform):
-        self._ip = address[0]
-        self._port = address[1]
-        self.buffer_size = buffer_size
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._data_logger = data_logger
+    def __init__(self, buffer_size, data_logger, address= None,
+                ws_enable=False, ws_address='', transform=SimulationTransform()):
+        
+        self._buffer = data_logger.sorted_data
         self._running = False
-        self._sim_tf = sim_transform
-        self._message_df = None
-        self._index = 0
-        self._attitude_df_len = 0
-        self._pos_df_len = 0
-        self._message_df_len = 0
+        self.ws_enable = ws_enable
+        self.address = address
+        self.transform = transform
+        
+        if ws_enable:
+            websocket.enableTrace(True)
+            self._ws_address = ws_address
+            self.ws = websocket.create_connection(self._ws_address)
+        if address is not None:
+            self._ip = address[0]
+            self._port = address[1]
+            self.buffer_size = buffer_size
+            self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def stop(self):
         self._running = False
         print('Simulation Client stopped')
 
+    def _compose_msg(self, msg, msg_type = 'datain'): 
+        return(json.dumps({
+            "type": msg_type,
+            "content": msg
+            },default=str))
+    
+    def _compose_transformed_msg(self, msg):
+        northings = self.transform.deg_2_dec(msg['lat'], msg['lat_dir'])
+        eastings = self.transform.deg_2_dec(msg['lon'], msg['lon_dir'])
+        altitude = msg['altitude']
+        x,y,z = self.transform.get_xyz(northings, eastings, altitude)
+        return(json.dumps({"message_id":"coords","x":x, "y":y, "z":z}, default=str))
+
     def _send(self, message):
-        message = message.encode('ascii')
-        self.server.sendto(message, (self._ip, self._port))
+        json_msg = self._compose_msg(message)
 
-    def _create_package(self):
-        data_avail = (
-            hasattr(self._data_logger.sorted_data, '$GPGGA_ext') 
-            and hasattr(self._data_logger.sorted_data, '$PSIMSNS_ext'))
+        if self.ws_enable: 
+            self.ws.send(json_msg)
+        if self.address is not None:
+            if message["message_id"]=="$GPGGA_ext": 
+                msg = self._compose_transformed_msg(message)
+                msg = msg.encode('ascii')
+                self.server.sendto(msg, (self._ip, self._port))
+            if message["message_id"]=="$PSIMSNS_ext":
+                msg = json.dumps(message, default=str)
+                msg = msg.encode('ascii')
+                self.server.sendto(msg, (self._ip, self._port))
+
+    def pop_buffer(self, index = None):
+        if len(self._buffer) < 1: return
+
+        if index is not None:
+            return self._buffer.pop(index)
+        else:
+            return self._buffer.pop()
         
-        if data_avail: 
-            frames_updated = (
-                self._attitude_df_len < self._data_logger.sorted_data['$PSIMSNS_ext'].shape[0] and 
-                self._pos_df_len < self._data_logger.sorted_data['$GPGGA_ext'].shape[0])
-
-            if frames_updated:
-                self._sim_tf.gps_data = self._data_logger.sorted_data['$GPGGA_ext']
-                self._sim_tf.attitude_data = self._data_logger.sorted_data['$PSIMSNS_ext']
-
-                self._attitude_df_len = self._data_logger.sorted_data['$PSIMSNS_ext'].shape[0]
-                self._pos_df_len = self._data_logger.sorted_data['$GPGGA_ext'].shape[0]
-
-                self._message_df = self._sim_tf.get_converted_frame()
-                self._message_df_len = self._message_df.shape[0]
-
     def start(self):
-        self._running = True
+        self._running = True 
         print('Simulation Client running...')
+
         while self._running:
-            self._create_package()
-            if self._index < self._message_df_len:
-                message = self._message_df.iloc[self._index].tolist()
-                message = ','.join(message)
-                self._send(message)
-                self._index += 1
+            if len(self._buffer):
+                self._send(self._buffer[0])
+                self.pop_buffer(0)
+
+        self.ws.close()

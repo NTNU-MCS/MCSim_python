@@ -53,11 +53,11 @@ class LogParser(Parser):
         self._running = True
         file = open(self.path , 'r')
         lines = file.readlines()
-
-        for line in tqdm(lines):
-            if not self._running: return
-            raw_msg = line.encode(encoding='ascii')
-            if self._raw_verbose: print(raw_msg)
-            self._parse_message(raw_msg)  
+        while self._running:
+            for line in tqdm(lines):
+                if not self._running: return
+                raw_msg = line.encode(encoding='ascii')
+                if self._raw_verbose: print(raw_msg)
+                self._parse_message(raw_msg)  
 
         print("StreamParser Stopped.")           
