@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Globalization;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
+using Newtonsoft.Json;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -15,23 +17,26 @@ namespace Gemini.EMRS.ScenarioGenerator
         public Vector3 position;
         public Quaternion QuaternionRot;
         public double time; 
-
+        public float xRotOffset = 0;
+        public float yRotOffset = 0;
+        public float zRotOffset = 0;
         private GameObject _boatObject;
-
         private UdpClient udpClient; 
-
         private IPEndPoint RemoteIpEndPoint;
 	    private Thread clientReceiveThread;
-
         public bool running;
 
-        public BoatScenarioRT(GameObject instantiatedBoatPrefab)
+        public BoatScenarioRT(GameObject instantiatedBoatPrefab, float xRotOffset, float yRotOffset, float zRotOffset)
         {   
             running = true;
             _boatObject = instantiatedBoatPrefab; 
             time = 0d;
             position = new Vector3(0, 0, 0);
-            QuaternionRot = Quaternion.AngleAxis(0, new Vector3(0, 1, 0));
+            this.xRotOffset = xRotOffset;
+            this.yRotOffset = yRotOffset;
+            this.zRotOffset = zRotOffset;
+
+            QuaternionRot = Quaternion.Euler(new Vector3(xRotOffset, yRotOffset, zRotOffset));
             ConnectToTcpServer ();
         }
 
@@ -47,25 +52,28 @@ namespace Gemini.EMRS.ScenarioGenerator
 	    } 
         private void ListenForData() { 		
 		try { 			
-			udpClient = new UdpClient(5005);
+			udpClient = new UdpClient(5000);
             RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);    
 			while (running) { 				
-                Byte[] recievedBytes = udpClient.Receive(ref RemoteIpEndPoint);	
-                // Convert byte array to string message. 						
+                Byte[] recievedBytes = udpClient.Receive(ref RemoteIpEndPoint);	 
                 string serverMessage = Encoding.ASCII.GetString(recievedBytes);
-                string[] splitMsg = serverMessage.Split(new char[] { ',' });
-                // Parse to usable values
-                time = Double.Parse(splitMsg[0]);
-                float x = float.Parse(splitMsg[1]);
-                float y =  float.Parse(splitMsg[2]);
-                float heading =  float.Parse(splitMsg[3]);
-                float pitch =  float.Parse(splitMsg[4]); 
-                float roll =  float.Parse(splitMsg[5]); 
-                float z =  float.Parse(splitMsg[6]);   
-                // Set Values
-                position = new Vector3(y, z, x);
-                QuaternionRot = Quaternion.Euler(new Vector3(pitch, heading, roll)); 	
-                Debug.Log("server message received as: " + serverMessage); 
+                Debug.Log("server message received as: " + serverMessage);
+                var details = JsonConvert.DeserializeObject<Dictionary<string, string>>(serverMessage); 
+                String msgId = details["message_id"];
+
+                if (String.Equals(msgId, "coords")){
+                    float x = float.Parse(details["x"], CultureInfo.InvariantCulture); 
+                    float y = float.Parse(details["y"], CultureInfo.InvariantCulture); 
+                    float z = float.Parse(details["z"], CultureInfo.InvariantCulture); 
+                    position = new Vector3(y, z, x);
+                }
+
+                if (String.Equals(msgId, "$PSIMSNS_ext")){
+                    float heading =  yRotOffset +  float.Parse(details["head_deg"], CultureInfo.InvariantCulture);
+                    float pitch =  xRotOffset + float.Parse(details["pitch_deg"], CultureInfo.InvariantCulture); 
+                    float roll =  zRotOffset + float.Parse(details["roll_deg"], CultureInfo.InvariantCulture); 
+                    QuaternionRot = Quaternion.Euler(new Vector3(pitch, heading, roll)); 
+                } 
 			}         
 		}         
 		catch (SocketException socketException) {             

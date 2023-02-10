@@ -10,6 +10,9 @@ namespace Gemini.EMRS.ScenarioGenerator {
     public class ScenarioRT: MonoBehaviour
     {
         public GameObject BoatPrefab;
+        public float xRotOffset = 0;
+        public float yRotOffset = 0;
+        public float zRotOffset = 0;
         private BoatScenarioRT _boatScenario;
 
         private double sim_time = -1d; 
@@ -32,8 +35,8 @@ namespace Gemini.EMRS.ScenarioGenerator {
 
         private void SetupBoat()
         {
-            BoatPrefab = Instantiate(BoatPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-            _boatScenario = new BoatScenarioRT(BoatPrefab);
+            // BoatPrefab = Instantiate(BoatPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+            _boatScenario = new BoatScenarioRT(BoatPrefab, xRotOffset, yRotOffset, zRotOffset);
         }
     }
 }
