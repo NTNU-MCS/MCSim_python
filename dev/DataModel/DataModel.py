@@ -1,8 +1,8 @@
 from threading import Thread
-from StreamParser import StreamParser
-from LogParser import LogParser
-from DataLogger import DataLogger  
-from SimulationLogger import SimulationLogger
+from parsers.StreamParser import StreamParser
+from parsers.LogParser import LogParser
+from loggers.DataLogger import DataLogger  
+from loggers.SimulationLogger import SimulationLogger
 from SimulationServer import SimulationServer
 from SimulationTransform import SimulationTransform
 import pathlib
@@ -26,7 +26,7 @@ class DataModel:
 
         #raw_verbose, tag_verbose, unparsed_tag_verbose,
         #parsed_message_verbose, parse_error_verbose
-        self.verbosity = (False, False, False, False, False)
+        self.verbosity = (False, False, False, False, True)
         self.now = datetime.now()
         self.date_time = self.now.strftime("%m%d%y_%H-%M-%S")
         self.save_logs = False
@@ -39,21 +39,31 @@ class DataModel:
         self.UDP_Decrypter = Decrypter(key_path = self.key_path)
 
         # if True a log can be selected and used as the data source
-        self.parse_saved_log = True
+        self.parse_saved_log = False
+        self.drop_ais_message = False
+         # filter for messages
+        self.prefixFilter = ['$PSIMSNS', '!AI', '$GPGGA']
+        self.suffixFilter = '_ext'
 
         if self.parse_saved_log:
             self.load_path = easygui.fileopenbox()
             self.UDP_Stream = LogParser(
                 path = self.load_path,
                 verbosity=self.verbosity, 
-                decrypter=self.UDP_Decrypter)
+                decrypter=self.UDP_Decrypter,
+                drop_ais_messages=self.drop_ais_message,
+                prefixFilter=self.prefixFilter,
+                suffixFilter=self.suffixFilter)
         else:
             self.UDP_Stream = StreamParser(
                 address=self.address,
                 buffer_size=self.buffer_size,
                 verbosity=self.verbosity,
                 log_stream=self.log_stream,
-                decrypter=self.UDP_Decrypter)
+                decrypter=self.UDP_Decrypter,
+                drop_ais_messages=self.drop_ais_message,
+                prefixFilter=self.prefixFilter,
+                suffixFilter=self.suffixFilter)
 
         self.simulation_origo_offset = ( 
             10.3929167,   #lon offset
@@ -90,7 +100,7 @@ class DataModel:
                 save_headers=self.save_headers,
                 df_aliases=self.df_aliases,
                 overwrite_headers=self.overwrite_headers,
-                verbose=self.dl_verbose  
+                verbose=self.dl_verbose
                 )
         else:
             self.UDP_DataLogger = DataLogger(

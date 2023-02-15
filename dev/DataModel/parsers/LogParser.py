@@ -3,14 +3,18 @@ import sys
 import select
 import os
 import Decrypter
-from Parser import Parser
+from parsers.Parser import Parser
 from tqdm import tqdm
 
 class LogParser(Parser):
     def __init__(self, path ,loop_limit = 1, 
                 verbosity = (False, False, False, False, False), 
-                decrypter = Decrypter):
-
+                decrypter = Decrypter, drop_ais_messages = True,
+                prefixFilter = [], suffixFilter=''
+                ):
+        
+        self.prefixFilter = prefixFilter
+        self.suffixFilter = suffixFilter
         self.extended_msg_suffix  = '_ext'
         # decrypter
         self._decrypter = decrypter
@@ -20,7 +24,7 @@ class LogParser(Parser):
         self.parsed_msg_list = []
 
         #incoming ais messages will be ignored if True
-        self.drop_ais_messages = True
+        self.drop_ais_messages = drop_ais_messages
         self._running = False
 
         # keep track of the buffered messages in bytes, doesnt
@@ -47,6 +51,11 @@ class LogParser(Parser):
         self._parse_error_verbose = verbosity[4]
 
         self.path = path
+
+         # Variables for AIS Decoding
+        self.talker = ['!AIVDM', '!AIVDO']
+        self.max_id = 10
+        self._buffer = [None] * self.max_id
 
     def start(self):
         print("StreamParser running.")

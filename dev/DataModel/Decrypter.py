@@ -83,9 +83,9 @@ class Decrypter:
         return metadata, msg 
         
     def decrypt(self, raw_msg): 
-        full_content = self._assemble(raw_msg) 
-
-        if full_content is '': return ''
+        
+        full_content = self._assemble(raw_msg)  
+        if full_content == '': return ''
         
         key, cypher = self._get_key_cypher(full_content)
         raw_cipher_data = b64decode(cypher) 

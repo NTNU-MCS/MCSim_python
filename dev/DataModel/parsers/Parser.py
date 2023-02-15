@@ -11,8 +11,12 @@ class Parser:
     def __init__(self, loop_limit = 1, 
                 verbosity = (False, False, False, False, False), 
                 log_stream = ("datstream_5min.txt", 300, False),
-                socket_timeout = 5, decrypter = Decrypter):
-
+                socket_timeout = 5, decrypter = Decrypter, drop_ais_messages=True,
+                prefixFilter = [], suffixFilter=''
+                ):
+        
+        self.prefixFilter = prefixFilter
+        self.suffixFilter = suffixFilter
         self.extended_msg_suffix  = '_ext'
         # decrypter
         self._decrypter = decrypter
@@ -22,7 +26,7 @@ class Parser:
         self.parsed_msg_list = []
 
         #incoming ais messages will be ignored if True
-        self.drop_ais_messages = True
+        self.drop_ais_messages = drop_ais_messages
         self._running = False
 
         # keep track of the buffered messages in bytes, doesnt
@@ -54,14 +58,28 @@ class Parser:
         self._parsed_message_verbose = verbosity[3]
         self._parse_error_verbose = verbosity[4] 
 
-    def pop_parsed_msg_list(self, index = None):
+        # Variables for AIS Decoding
+        self.talker = ['!AIVDM', '!AIVDO']
+        self.max_id = 10
+        self._buffer = [None] * self.max_id
+
+    def _is_id_valid(self, msg_id):
+        for filter in self.prefixFilter:
+            if (msg_id.find(filter) == 0 and 
+            msg_id.find(self.suffixFilter) != 0):
+                return True
+        return False
+
+    def pop_parsed_msg_list(self, index = None): 
         if len(self.parsed_msg_list) < 1: return
 
         if index is not None:
-            return self.parsed_msg_list.pop(index)
+            self.parsed_msg_list.pop(index) 
+            return 
         else:
-            return self.parsed_msg_list.pop()
-
+            self.parsed_msg_list.pop() 
+            return 
+        
     def stop(self):
         self._running = False
         return
@@ -91,6 +109,10 @@ class Parser:
     def _update_data_object(self, parsed_msg, raw_msg, what, verbose = False, metadata = None): 
         #update this when extra information is added to udp message
         tag = self._get_tag(raw_msg) 
+
+        if (not self._is_id_valid(tag)): 
+            return
+
         if metadata is None:
             self.parsed_msg_list.insert(0, (tag, parsed_msg)) 
         else:
@@ -98,7 +120,7 @@ class Parser:
             self.parsed_msg_list.insert(0, (tag, parsed_msg, metadata)) 
         self.parsed_msg_list_size = sys.getsizeof(self.parsed_msg_list) 
         if verbose:
-            print('type {}{} Message: {}'.format(type(parsed_msg), what, repr(parsed_msg)))
+            print('type {}{} Message: {} , metadata: {}\n\n'.format(type(parsed_msg), what, repr(parsed_msg), metadata))
         return
 
     def _fix_bad_eol(self, raw_msg): 
@@ -121,58 +143,83 @@ class Parser:
         string_list = parsed_string.strip().split(self.eol_separator)  
         return string_list
 
-    def _parse_nmea(self, raw_msg):
+    def _parse_nmea(self, raw_msg, metadata=None):
         decoded_msg = raw_msg.decode(encoding='ascii')
         parsed_msg = pynmea2.parse(decoded_msg)  
-        self._update_data_object(parsed_msg, raw_msg, 'NMEA', self._parsed_message_verbose)
+        self._update_data_object(parsed_msg, raw_msg, 'NMEA', self._parsed_message_verbose, metadata=metadata)
         self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
 
-    def _parse_ais(self, raw_msg):
-        parsed_msg = ais_decode(raw_msg)
+    def _assemble_ais(self,raw_msg):
+        decoded = raw_msg.decode(encoding='ascii')  
+
+        # check if receiving only one message
+        #assert(len(decoded.split(',')) == self._field_num)
         
+        talker_id, msg_len, msg_seq, msg_id, *content = decoded.split(',') 
+        if (msg_id == ''): return ais_decode(raw_msg) 
+        msg_len = int(msg_len)
+        msg_seq = int(msg_seq)-1 
+        msg_id = int(msg_id)
+
+        # check if talker is correct 
+
+        if self._buffer[msg_id] is None:
+            self._buffer[msg_id] = [None] * msg_len
+            
+        self._buffer[msg_id][msg_seq] = raw_msg
+
+        full_content = ''
+        if None in self._buffer[msg_id]:
+            return full_content
+        else:
+            
+            full_content = ais_decode(*self._buffer[msg_id]) 
+            self._buffer[msg_id] = None
+            return full_content
+
+    def _parse_ais(self, raw_msg, metadata=None):
+        
+        decoded = raw_msg.decode(encoding='ascii')  
+        
+        assert(decoded.find(self.talker[0]) == 0 or decoded.find(self.talker[1]) == 0) 
         if self.drop_ais_messages: return
-
-        self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
-        self._update_data_object(parsed_msg, raw_msg, 'AIS', self._parsed_message_verbose)
-
-    def _parse_decrypted(self, decrypted):
-        metadata, msg = decrypted 
-        
-        #inconsistent 
-        try: parsed_msg = pynmea2.parse(msg)
-        except:
-            try:  
-                parsed_msg = ais_decode(msg)
-                if self.drop_ais_messages: return
-            except: 
-                if self._parse_error_verbose:
-                                    print('Unable to parse or save message tag: {}'.format(msg))
-        raw_msg = msg.encode('ascii')
-        self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
-        self._update_data_object(parsed_msg, raw_msg, 'encrypted', self._parsed_message_verbose, metadata)
+        parsed_msg = self._assemble_ais(raw_msg)
+        if parsed_msg is '': return
+        else:   
+            self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
+            self._update_data_object(parsed_msg, raw_msg, 'AIS', self._parsed_message_verbose, metadata=metadata)
 
     def _parse_list(self, raw_msg, list_callback, _loop_count):
         assert(_loop_count < self._loop_limit)  
         string_list = list_callback(raw_msg) 
         assert(len(string_list) > 1)
-        _loop_count += 1 
-        for entry in string_list: 
+        _loop_count += 1  
+        for entry in string_list:  
             entry = entry + self.eol_separator  
             entry_bin = entry.encode(encoding="ascii") 
             self._parse_message(entry_bin, _loop_count)
         return _loop_count
 
-    def _parse_message(self, raw_msg, _loop_count = 0):    
-        try: self._parse_nmea(raw_msg)
-        except:
-            try: self._parse_ais(raw_msg)
+    def _parse_message(self, raw_msg, _loop_count = 0, metadata=None):    
+        if self._raw_verbose:
+            print(raw_msg.decode('ascii'),'\n\n') 
+        try:  
+            self._parse_nmea(raw_msg, metadata)
+        except: 
+            try:  
+                self._parse_ais(raw_msg, metadata) 
             except:
-                try: 
-                    self._parse_decrypted(self._decrypter.decrypt(raw_msg))  
+                try:  
+                    full_message = self._decrypter.decrypt(raw_msg)
+                    if (full_message != ''):  
+                        metadata, msg = full_message 
+                        self._parse_message(msg.encode('ascii'), metadata=metadata)  
                 except:  
-                    try: _loop_count = self._parse_list(raw_msg, self._fix_bad_eol, _loop_count)                
+                    try: 
+                        _loop_count = self._parse_list(raw_msg, self._fix_bad_eol, _loop_count)                
                     except:
-                        try: _loop_count = self._parse_list(raw_msg, self._fix_collated_msgs, _loop_count)
+                        try: 
+                            _loop_count = self._parse_list(raw_msg, self._fix_collated_msgs, _loop_count)
                         except:
                             try:
                                 self._save_individual_tags(raw_msg, self.unknown_msg_tags, "Parse Failed", verbose = self._unparsed_tag_verbose)

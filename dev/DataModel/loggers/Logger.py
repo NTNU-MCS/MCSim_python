@@ -48,6 +48,14 @@ class Logger:
             msg_values.append(getattr(nmea_object, name))
 
         return(msg_atr, msg_values, unkown_msg_data)
+    
+    def _get_ais_attributes(self, ais_object):  
+        ais_dict = ais_object.asdict()
+        msg_values = list(ais_dict.values())     
+        msg_atr = list(ais_dict.keys())
+        mmsi = ais_dict['mmsi'] 
+
+        return(msg_atr, msg_values, [], mmsi)
 
     def _load_headers(self):
         headers = []
