@@ -115,6 +115,7 @@ class DataModel:
         
         self.local_address = (socket.gethostname(), 5000) 
         self.sc_buffer_sz = 1024
+        self.distance_filter = 2
 
         self.UDP_SimulationServer = SimulationServer(
             address=self.local_address, 
@@ -122,7 +123,8 @@ class DataModel:
             data_logger=self.UDP_DataLogger,
             ws_enable=True,
             ws_address="ws://127.0.0.1:8000",
-            transform=self.UDP_Sim_Frame_transform
+            transform=self.UDP_Sim_Frame_transform,
+            distance_filter=self.distance_filter
             ) 
 
         # Create new threads
