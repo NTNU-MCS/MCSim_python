@@ -20,7 +20,8 @@ namespace Gemini.EMRS.ScenarioGenerator
         public float xRotOffset = 0;
         public float yRotOffset = 0;
         public float zRotOffset = 0;
-        private GameObject _boatObject;
+        private GameObject _boatObject ;
+        public AisBoat[] aisObjects = new AisBoat[] {};
         private UdpClient udpClient; 
         private IPEndPoint RemoteIpEndPoint;
 	    private Thread clientReceiveThread;
@@ -29,7 +30,7 @@ namespace Gemini.EMRS.ScenarioGenerator
         public BoatScenarioRT(GameObject instantiatedBoatPrefab, float xRotOffset, float yRotOffset, float zRotOffset)
         {   
             running = true;
-            _boatObject = instantiatedBoatPrefab; 
+            _boatObject = instantiatedBoatPrefab;   
             time = 0d;
             position = new Vector3(0, 0, 0);
             this.xRotOffset = xRotOffset;
@@ -50,6 +51,7 @@ namespace Gemini.EMRS.ScenarioGenerator
 			Debug.Log("On client connect exception " + e); 		
 		} 	
 	    } 
+
         private void ListenForData() { 		
 		try { 			
 			udpClient = new UdpClient(5000);
@@ -57,9 +59,13 @@ namespace Gemini.EMRS.ScenarioGenerator
 			while (running) { 				
                 Byte[] recievedBytes = udpClient.Receive(ref RemoteIpEndPoint);	 
                 string serverMessage = Encoding.ASCII.GetString(recievedBytes);
-                Debug.Log("server message received as: " + serverMessage);
+                // Debug.Log("server message received as: " + serverMessage);
                 var details = JsonConvert.DeserializeObject<Dictionary<string, string>>(serverMessage); 
                 String msgId = details["message_id"];
+
+                if (String.Equals(msgId, "ais")){
+                        setAisData(details);
+                    }
 
                 if (String.Equals(msgId, "coords")){
                     float x = float.Parse(details["x"], CultureInfo.InvariantCulture); 
@@ -79,6 +85,28 @@ namespace Gemini.EMRS.ScenarioGenerator
 		catch (SocketException socketException) {             
 			Debug.Log("Socket exception: " + socketException);         
 		}
+        }
+
+        private void setAisData(Dictionary<string,string> message) {
+            string mmsi = message["mmsi"];
+            float x = float.Parse(message["x"], CultureInfo.InvariantCulture); 
+            float y = float.Parse(message["y"], CultureInfo.InvariantCulture);  
+            Vector3 pos = new Vector3(y, 0f, x);
+
+            float heading = float.Parse(message["heading"], CultureInfo.InvariantCulture); 
+            Quaternion rot = Quaternion.Euler(new Vector3(0f, heading, 0f));
+            int index = Array.FindIndex(aisObjects,i => i.id == mmsi);
+
+            if (index == -1) {
+                int newLength = aisObjects.Length + 1;
+                Debug.Log("lengt: " + aisObjects.Length); 
+                Array.Resize(ref aisObjects, newLength);
+                Debug.Log("lengt a: " + aisObjects.Length); 
+                aisObjects[aisObjects.Length-1] = new AisBoat(mmsi);
+            } else { 
+                aisObjects[index].pos = pos; 
+                aisObjects[index].rot = rot;
+            }
         }
 
         public void UpdateVessel(){
