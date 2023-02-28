@@ -3,12 +3,13 @@ import pandas as pd
 import json
 from simulation.SimulationTransform import SimulationTransform
 from utils.DashboardWebsocket import DashboardWebsocket
+from colav.ColavManager import ColavManager
 import math
 
 
 class SimulationServer:
     def __init__(self, buffer_size, data_logger, address= None,
-                websocket = DashboardWebsocket, transform=SimulationTransform(), distance_filter=None):
+                websocket = DashboardWebsocket, transform=SimulationTransform(), distance_filter=None, colav_manager = ColavManager):
         
         self._buffer = data_logger.sorted_data
         self._running = False 
@@ -21,6 +22,7 @@ class SimulationServer:
         self.gunnerus_lon=None
         self._unity_filter = 0.1
         self.websocket = websocket
+        self._colav_manager = colav_manager
     
         if address is not None:
             self._ip = address[0]
@@ -112,18 +114,33 @@ class SimulationServer:
 
             if self.websocket.enable: 
                 self.websocket.send(json_msg)
+
+            valid_ais_msg = (
+                message["message_id"].find("!AI") == 0 and
+                message["message_id"].find("_ext_") != -1 and
+                self._has_data(message)
+                )
+            
             if self.address is not None:
-                if (message["message_id"].find("!AI") == 0 and 
-                self._has_data(message) and 
-                self._validate_coords(message, self._unity_filter)):
-                    msg = self._compose_ais_msg(message)
-                    msg = msg.encode('ascii')
-                    self.server.sendto(msg, (self._ip, self._port))
-                if message["message_id"]=="$GPGGA_ext": 
+
+                if valid_ais_msg:  
+                    self._colav_manager.update_ais_data(message)
+
+                    if self._validate_coords(message, self._unity_filter):
+                        msg = self._compose_ais_msg(message)
+                        msg = msg.encode('ascii')
+                        self.server.sendto(msg, (self._ip, self._port))
+
+                if message["message_id"]=="$GPGGA_ext":  
                     self._set_gunnerus_coords(message)
                     msg = self._compose_transformed_msg(message)
                     msg = msg.encode('ascii')
                     self.server.sendto(msg, (self._ip, self._port))
+
+                if message["message_id"]=="$GPRMC_ext": 
+                    self._colav_manager.update_gunnerus_data(message)
+                    pass
+
                 if message["message_id"]=="$PSIMSNS_ext":
                     msg = json.dumps(message, default=str)
                     msg = msg.encode('ascii')

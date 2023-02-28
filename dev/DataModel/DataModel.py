@@ -5,6 +5,7 @@ from loggers.DataLogger import DataLogger
 from loggers.SimulationLogger import SimulationLogger
 from simulation.SimulationServer import SimulationServer
 from simulation.SimulationTransform import SimulationTransform
+from colav.ColavManager import ColavManager
 import pathlib
 from utils.DashboardWebsocket import DashboardWebsocket
 from datetime import datetime
@@ -17,7 +18,7 @@ class DataModel:
     def __init__(self):
         #Todo: add flush() functionality across related classes to purge data 
         #and prevent stack overflow / slowdown over extended use 
-
+        self.gunnerus_mmsi = '258342000'
         self.abs_path = pathlib.Path(__file__).parent.resolve()
         #global: fagitrelay.it.ntnu.no
         #local: gunnerus.local
@@ -43,7 +44,7 @@ class DataModel:
         self.parse_saved_log = False
         self.drop_ais_message = False
          # filter for messages
-        self.prefixFilter = ['$PSIMSNS', '!AI', '$GPGGA']
+        self.prefixFilter = ['$PSIMSNS', '!AI', '$GPGGA', '$GPRMC']
         self.suffixFilter = '_ext'
 
         if self.parse_saved_log:
@@ -121,28 +122,40 @@ class DataModel:
         self.ws_address= "ws://127.0.0.1:8000"
         self.websocket = DashboardWebsocket(self.ws_address, self.ws_enable)
 
+        self.Colav_Manager = ColavManager(
+            enable=True, 
+            update_interval=5,
+            websocket=self.websocket,
+            gunnerus_mmsi = self.gunnerus_mmsi
+            )
+
         self.UDP_SimulationServer = SimulationServer(
             address=self.local_address, 
             buffer_size=self.sc_buffer_sz,
             data_logger=self.UDP_DataLogger,
             websocket=self.websocket,
             transform=self.UDP_Sim_Frame_transform,
-            distance_filter=self.distance_filter
+            distance_filter=self.distance_filter,
+            colav_manager=self.Colav_Manager
             ) 
+        
 
         # Create new threads
         self.thread_udp_stream = Thread(target=self.UDP_Stream.start) 
         self.thread_log_data = Thread(target=self.UDP_DataLogger.start)
         self.thread_sim_server = Thread(target=self.UDP_SimulationServer.start) 
+        self.thread_colav_manager = Thread(target=self.Colav_Manager.start)
 
     def start(self):
         self.thread_udp_stream.start()
         self.thread_log_data.start()
-        self.thread_sim_server.start() 
+        self.thread_sim_server.start()
+        self.thread_colav_manager.start() 
 
     def stop(self):
         self.UDP_Stream.stop()
         self.UDP_DataLogger.stop() 
         self.UDP_SimulationServer.stop()
+        self.Colav_Manager.stop()
         self.websocket.close()
         print('Exiting...') 

@@ -1,6 +1,7 @@
 import pandas as pd 
 import math 
 import pymap3d as pm
+from utils.Point import Point
 
 class SimulationTransform:
     def __init__(self, offsets=[0,0,0,0,0], join_type = 'merge'):
@@ -12,6 +13,8 @@ class SimulationTransform:
         self._heading_offset = offsets[3]
         self._heading_dir = offsets[4]
         self._join_type = join_type
+        self.nm_in_deg = 60
+        self.m_in_nm = 1852
 
     def deg_2_dec(self, coord, dir):
         dir = 1
@@ -62,13 +65,95 @@ class SimulationTransform:
             nstr = (nstr + '.').ljust(d_len-2,'0')
             nstr = nstr.ljust(d_len-1,'1')
         if len(nstr) > d_len: nstr = nstr[:d_len]
-
         return nstr
     
     def get_xyz(self, northings, eastings, altitude):
         x,y,_ = pm.geodetic2enu(northings, eastings, altitude, self._y_o, self._x_o, self._z_o) 
         z = altitude - self._z_o
         return x,y,z
+    
+    def coords_to_xyz(self, northings, eastings, altitude, y_o, x_o, z_o):
+        x,y,_ = pm.geodetic2enu(northings, eastings, altitude, y_o, x_o, z_o) 
+        z = altitude - z_o
+        return x,y,z
+    
+    def kn_to_nms(self, kn):
+        nms = kn/3600
+        return nms
+
+    def nm_to_deg(self, nm):
+        deg = nm / self.nm_in_deg
+        return deg
+    
+    def m_to_nm(self, m):
+        nm = m / self.m_in_nm
+        return nm
+    
+    # Given three collinear points p, q, r, the function checks if 
+    # point q lies on line segment 'pr' 
+    def onSegment(self, p, q, r):
+        if ( (q.x <= max(p.x, r.x)) and (q.x >= min(p.x, r.x)) and 
+                (q.y <= max(p.y, r.y)) and (q.y >= min(p.y, r.y))):
+            return True
+        return False
+
+    def orientation(self, p, q, r):
+        # to find the orientation of an ordered triplet (p,q,r)
+        # function returns the following values:
+        # 0 : Collinear points
+        # 1 : Clockwise points
+        # 2 : Counterclockwise
+        # See https://www.geeksforgeeks.org/orientation-3-ordered-points/amp/ 
+        # for details of below formula. 
+        val = (float(q.y - p.y) * (r.x - q.x)) - (float(q.x - p.x) * (r.y - q.y))
+        if (val > 0):
+
+            # Clockwise orientation
+            return 1
+        elif (val < 0):
+
+            # Counterclockwise orientation
+            return 2
+        else:
+
+            # Collinear orientation
+            return 0
+
+    # The main function that returns true if 
+    # the line segment 'p1q1' and 'p2q2' intersect.
+    def doIntersect(self,p1,q1,p2,q2):
+
+        # Find the 4 orientations required for 
+        # the general and special cases
+        o1 = self.orientation(p1, q1, p2)
+        o2 = self.orientation(p1, q1, q2)
+        o3 = self.orientation(p2, q2, p1)
+        o4 = self.orientation(p2, q2, q1)
+
+        # General case
+        if ((o1 != o2) and (o3 != o4)):
+            return True
+
+        # Special Cases
+
+        # p1 , q1 and p2 are collinear and p2 lies on segment p1q1
+        if ((o1 == 0) and self.onSegment(p1, p2, q1)):
+            return True
+
+        # p1 , q1 and q2 are collinear and q2 lies on segment p1q1
+        if ((o2 == 0) and self.onSegment(p1, q2, q1)):
+            return True
+
+        # p2 , q2 and p1 are collinear and p1 lies on segment p2q2
+        if ((o3 == 0) and self.onSegment(p2, p1, q2)):
+            return True
+
+        # p2 , q2 and q1 are collinear and q1 lies on segment p2q2
+        if ((o4 == 0) and self.onSegment(p2, q1, q2)):
+            return True
+
+        # If none of the cases
+        return False
         
     def get_converted_frame(self): 
         temp = self.get_frame_dec()
