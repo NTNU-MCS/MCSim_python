@@ -2,7 +2,7 @@ import time
 import sys
 import select
 import os
-import Decrypter
+from utils.Decrypter import Decrypter
 from parsers.Parser import Parser
 from tqdm import tqdm
 

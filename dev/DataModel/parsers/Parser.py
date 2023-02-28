@@ -5,7 +5,7 @@ import pynmea2
 from pyais import decode as ais_decode
 import select
 import os
-import Decrypter
+from utils.Decrypter import Decrypter
 
 class Parser:
     def __init__(self, loop_limit = 1, 

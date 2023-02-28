@@ -8,7 +8,7 @@ from simulation.SimulationTransform import SimulationTransform
 import pathlib
 from datetime import datetime
 import os
-from Decrypter import Decrypter
+from utils.Decrypter import Decrypter
 import socket
 import easygui
 

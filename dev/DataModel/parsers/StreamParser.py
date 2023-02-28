@@ -3,7 +3,7 @@ import time
 import sys
 import select
 import os
-import Decrypter
+from utils.Decrypter import Decrypter
 from parsers.Parser import Parser
 
 class StreamParser(Parser):
