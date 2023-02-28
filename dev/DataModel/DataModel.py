@@ -6,6 +6,7 @@ from loggers.SimulationLogger import SimulationLogger
 from simulation.SimulationServer import SimulationServer
 from simulation.SimulationTransform import SimulationTransform
 import pathlib
+from utils.DashboardWebsocket import DashboardWebsocket
 from datetime import datetime
 import os
 from utils.Decrypter import Decrypter
@@ -116,13 +117,15 @@ class DataModel:
         self.local_address = (socket.gethostname(), 5000) 
         self.sc_buffer_sz = 1024
         self.distance_filter = 2
+        self.ws_enable= True
+        self.ws_address= "ws://127.0.0.1:8000"
+        self.websocket = DashboardWebsocket(self.ws_address, self.ws_enable)
 
         self.UDP_SimulationServer = SimulationServer(
             address=self.local_address, 
             buffer_size=self.sc_buffer_sz,
             data_logger=self.UDP_DataLogger,
-            ws_enable=True,
-            ws_address="ws://127.0.0.1:8000",
+            websocket=self.websocket,
             transform=self.UDP_Sim_Frame_transform,
             distance_filter=self.distance_filter
             ) 
@@ -140,5 +143,6 @@ class DataModel:
     def stop(self):
         self.UDP_Stream.stop()
         self.UDP_DataLogger.stop() 
-        self.UDP_SimulationServer.stop() 
+        self.UDP_SimulationServer.stop()
+        self.websocket.close()
         print('Exiting...') 

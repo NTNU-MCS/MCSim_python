@@ -1,18 +1,17 @@
 import socket
-import pandas as pd
-import websocket 
+import pandas as pd 
 import json
 from simulation.SimulationTransform import SimulationTransform
+from utils.DashboardWebsocket import DashboardWebsocket
 import math
 
 
 class SimulationServer:
     def __init__(self, buffer_size, data_logger, address= None,
-                ws_enable=False, ws_address='', transform=SimulationTransform(), distance_filter=None):
+                websocket = DashboardWebsocket, transform=SimulationTransform(), distance_filter=None):
         
         self._buffer = data_logger.sorted_data
-        self._running = False
-        self.ws_enable = ws_enable
+        self._running = False 
         self.address = address
         self.transform = transform
         self.ais_history = dict()
@@ -21,11 +20,8 @@ class SimulationServer:
         self.gunnerus_lat=None
         self.gunnerus_lon=None
         self._unity_filter = 0.1
-        
-        if ws_enable:
-            websocket.enableTrace(True)
-            self._ws_address = ws_address
-            self.ws = websocket.create_connection(self._ws_address)
+        self.websocket = websocket
+    
         if address is not None:
             self._ip = address[0]
             self._port = address[1]
@@ -114,8 +110,8 @@ class SimulationServer:
         if self._validate_coords(message, self.distance_filter): 
             json_msg = self._compose_msg(message)
 
-            if self.ws_enable: 
-                self.ws.send(json_msg)
+            if self.websocket.enable: 
+                self.websocket.send(json_msg)
             if self.address is not None:
                 if (message["message_id"].find("!AI") == 0 and 
                 self._has_data(message) and 
@@ -150,4 +146,4 @@ class SimulationServer:
                 self._send(self._buffer[0])
                 self.pop_buffer(0)
 
-        self.ws.close()
+        
