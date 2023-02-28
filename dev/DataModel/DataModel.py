@@ -3,8 +3,8 @@ from parsers.StreamParser import StreamParser
 from parsers.LogParser import LogParser
 from loggers.DataLogger import DataLogger  
 from loggers.SimulationLogger import SimulationLogger
-from SimulationServer import SimulationServer
-from SimulationTransform import SimulationTransform
+from simulation.SimulationServer import SimulationServer
+from simulation.SimulationTransform import SimulationTransform
 import pathlib
 from datetime import datetime
 import os
