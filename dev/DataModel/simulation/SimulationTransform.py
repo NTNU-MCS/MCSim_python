@@ -15,6 +15,7 @@ class SimulationTransform:
         self._join_type = join_type
         self.nm_in_deg = 60
         self.m_in_nm = 1852
+        self.mps_in_kn = 0.51444
 
     def deg_2_dec(self, coord, dir):
         dir = 1
@@ -76,6 +77,10 @@ class SimulationTransform:
         x,y,_ = pm.geodetic2enu(northings, eastings, altitude, y_o, x_o, z_o) 
         z = altitude - z_o
         return x,y,z
+
+    def xyz_to_coords(self, x, y, lat_o, lon_o, h_o = 0, z = 0):
+        lat, lon, _ = pm.enu2geodetic(x, y, z, lat_o, lon_o, h_o)
+        return lat, lon
     
     def kn_to_nms(self, kn):
         nms = kn/3600
@@ -88,6 +93,9 @@ class SimulationTransform:
     def m_to_nm(self, m):
         nm = m / self.m_in_nm
         return nm
+    
+    def kn_to_mps(self, knot):
+        return knot * self.mps_in_kn
     
     # Given three collinear points p, q, r, the function checks if 
     # point q lies on line segment 'pr' 

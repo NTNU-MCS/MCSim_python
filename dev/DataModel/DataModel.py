@@ -28,7 +28,7 @@ class DataModel:
 
         #raw_verbose, tag_verbose, unparsed_tag_verbose,
         #parsed_message_verbose, parse_error_verbose
-        self.verbosity = (False, False, False, False, True)
+        self.verbosity = (False, False, False, False, False)
         self.now = datetime.now()
         self.date_time = self.now.strftime("%m%d%y_%H-%M-%S")
         self.save_logs = False
@@ -117,16 +117,34 @@ class DataModel:
         
         self.local_address = (socket.gethostname(), 5000) 
         self.sc_buffer_sz = 1024
-        self.distance_filter = 2
+        self.distance_filter = 1
         self.ws_enable= True
         self.ws_address= "ws://127.0.0.1:8000"
         self.websocket = DashboardWebsocket(self.ws_address, self.ws_enable)
+        self.dummy_gunnerus = {
+            'lat': 6228.4822,
+            'lat_dir': 'W',
+            'lon': 609.1721,
+            'lon_dir': 'N',
+            'true_course': 270,
+            'spd_over_grnd': 100,
+            }
+        self.dummy_vessel = {
+            'lon': 6.15405, 
+            'lat': 62.473457, 
+            'course': -30,
+            'speed': 100,
+            'mmsi': 3143757
+             }
+
 
         self.Colav_Manager = ColavManager(
             enable=True, 
-            update_interval=5,
+            update_interval=10,
             websocket=self.websocket,
-            gunnerus_mmsi = self.gunnerus_mmsi
+            gunnerus_mmsi = self.gunnerus_mmsi,
+            dummy_gunnerus= None,
+            dummy_vessel= None
             )
 
         self.UDP_SimulationServer = SimulationServer(
