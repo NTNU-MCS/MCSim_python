@@ -43,7 +43,8 @@ class DataModel:
         # if True a log can be selected and used as the data source
         self.parse_saved_log = False
         self.drop_ais_message = False
-         # filter for messages
+        
+        # filter for messages
         self.prefixFilter = ['$PSIMSNS', '!AI', '$GPGGA', '$GPRMC']
         self.suffixFilter = '_ext'
 
@@ -118,7 +119,7 @@ class DataModel:
         self.local_address = (socket.gethostname(), 5000) 
         self.sc_buffer_sz = 1024
         self.distance_filter = 1
-        self.ws_enable= True
+        self.ws_enable= False
         self.ws_address= "ws://127.0.0.1:8000"
         self.websocket = DashboardWebsocket(self.ws_address, self.ws_enable)
         self.dummy_gunnerus = {
@@ -135,8 +136,7 @@ class DataModel:
             'course': -30,
             'speed': 100,
             'mmsi': 3143757
-             }
-
+            }
 
         self.Colav_Manager = ColavManager(
             enable=True, 
@@ -144,7 +144,8 @@ class DataModel:
             websocket=self.websocket,
             gunnerus_mmsi = self.gunnerus_mmsi,
             dummy_gunnerus= None,
-            dummy_vessel= None
+            dummy_vessel= None,
+            safety_radius_m=2000
             )
 
         self.UDP_SimulationServer = SimulationServer(
@@ -157,7 +158,6 @@ class DataModel:
             colav_manager=self.Colav_Manager
             ) 
         
-
         # Create new threads
         self.thread_udp_stream = Thread(target=self.UDP_Stream.start) 
         self.thread_log_data = Thread(target=self.UDP_DataLogger.start)
