@@ -4,36 +4,36 @@ close all
 
 %% constants
 self.S = [0 1; -1 0];
-self.k1 = 1.1;
-self.lambda = 0.999;
+self.k1 = 1;
+self.lambda = 0.5;
 self.P = diag([1,10]);
 self.dq = 200;
-self.dt = 0.01;
-self.gamma_1 = 10;
-self.gamma_2 = 1;
-self.sigma = 300;
+self.dt = 0.1;
+self.gamma_2 = 1.5;
+self.sigma = 27.0;
 self.t = 1;
 self.t_t = 0;
-self.t_tot = 100;
+self.t_tot = 200;
 self.hist = zeros(20,1);
 self.arpa = [];
 
 %% initialize
-
 rd = 0;
 p = [0; 0];
-u = 25;
+u = 10;
 psi = deg2rad(55);
 z = [sin(psi); cos(psi)];
+tq = [sin(psi); cos(psi)];
 [ux, uy] = get_u_xy(z,u);
 
-po = [2250 2350; -800 +300];
+po = [1150 1500; 600 -300];
 self.n_po= size(po,2);
-uo = [15 30];
+uo = [10 10];
 psio = [deg2rad(-90), deg2rad(-40)];
-tq = z;
 zo = [sin(psio); cos(psio)];
 [uo_x, uo_y] = get_uo_xy(zo,uo);
+
+
 [fa, fb] = get_f(z, zo, u, uo);
 g = get_g(self, z);
 
@@ -49,10 +49,9 @@ while self.t_t <= self.t_tot
     self.hist(5,self.t) = rd;
     self.hist(6: 5 + self.n_po*2, self.t) = reshape(po,[self.n_po*2,1]);
 
-    rd = get_nominal_control(self, z, tq);
+    rd = real(get_nominal_control(self, z, tq));
 
-    %     ub = [rd, linspace(-8,8,61)];
-    ub = linspace(-1,1,81);
+    ub = [rd, linspace(-1,1,31)];
     %% find rd
     min_ub = Inf;
     pe = p-po;
@@ -60,7 +59,6 @@ while self.t_t <= self.t_tot
     B1_dot = get_B1_dot(pe, u, z);
     alpha_1 = u*atan(B1/self.sigma);
     B2 = B1_dot + alpha_1;
-    %(self.gamma_2*(self.gamma_1*(self.dq - abs(tq'*(p - po))) - tq'*(u*z - uo*zo)) - self.gamma_1*tq'*(u*z - uo*zo))/(self.S*u*z*tq')
     for c = 1:size(ub,2)
         rdc = ub(c);
         B2_dot = get_B2_dot(self, pe, z, B1, u, rdc);
@@ -70,12 +68,7 @@ while self.t_t <= self.t_tot
             end
         end
     end
-    %     self.hist(self.po_space + 1 ,self.t) = B1;
-    %     self.hist(self.po_space + 2,self.t) = B1_dot;
-    %     self.hist(self.po_space + 3,self.t) = B2_dot;
-    %     self.hist(self.po_space + 4,self.t) = -self.gamma_2 * B2;
     rd= min_ub;
-    %%
     [fa, fb] = get_f(z, zo, u, uo);
     g = get_g(self, z);
 
@@ -91,7 +84,7 @@ end
 % plot_arpa(self, p, po)
 hold on
 get_plots(self, size(self.hist, 2))
- animate(self)
+animate(self)
 
 %% functions
 function [d_at_cpa, t_2_cpa, p_at_cpa, po_at_cpa, t_2_r ,p_at_r, po_at_r] = get_arpa(self, ux, uy, uo_x, uo_y, p, po)
@@ -121,9 +114,9 @@ for i = 1:self.n_po
     t_x_at_cpa(i) = po(1,i) + t_2_cpa(i)* uo_x(i);
     t_y_at_cpa(i) = po(2,i) + t_2_cpa(i)* uo_y(i);
 
-    % time  to dq 
+    % time  to dq
     if d_at_cpa(i) < self.dq
-        tt_2_r = [ 
+        tt_2_r = [
             (- self.dq^2 + po(1,i)^2 + po(2,i)^2)/((self.dq^2*uo_x(i)^2 - ...
             2*self.dq^2*uo_x(i)*ux + self.dq^2*uo_y(i)^2 - ...
             2*self.dq^2*uo_y(i)*uy + self.dq^2*ux^2 + self.dq^2*uy^2 - ...
@@ -150,7 +143,7 @@ for i = 1:self.n_po
         % self coords at r
         x_at_r(i) = p(1) + min(t_2_r)*ux;
         y_at_r(i) = p(2) + min(t_2_r)*uy;
-     end
+    end
     p_at_cpa=[x_at_cpa; y_at_cpa];
     po_at_cpa=[t_x_at_cpa; t_y_at_cpa];
     p_at_r=[x_at_r; y_at_r];
@@ -223,7 +216,7 @@ for i = 1: self.n_po %go through columns
     plot([po(1, i), self.arpa(5,i)], [po(2, i), self.arpa(6,i)])
     hold on
     plot([self.arpa(3,i),self.arpa(5,i)], [self.arpa(4,i),self.arpa(6,i)], '--')
-    hold on 
+    hold on
     if self.arpa(8,i) ~= inf
         plot([p(1), self.arpa(8,i)], [p(2), self.arpa(9,i)])
         hold on
@@ -289,10 +282,10 @@ for t = 1: 10 :size(self.hist,2)
         hold on
         circle(self.hist(5+(i*2-1),t),self.hist(5+(i*2),t), self.dq);
         hold on
-        end
-        frame = getframe(gcf) ;
-        writeVideo(writerObj, frame);
-        hold off
+    end
+    frame = getframe(gcf) ;
+    writeVideo(writerObj, frame);
+    hold off
 end
 
 % close the writer object
