@@ -16,7 +16,11 @@ class ARPA:
         self._transform = transform
         self.dummy_gunnerus = dummy_gunnerus
         self.dummy_vessel = dummy_vessel
+        self._running = False
         pass
+
+    def stop(self):
+        self._running = False
 
     def update_gunnerus_data(self, data):
         self._gunnerus_data = data 
@@ -156,6 +160,7 @@ class ARPA:
             "o_x_at_cpa": o_x_at_cpa,
             "o_y_at_cpa": o_y_at_cpa,
             }
+        
         return cpa
 
     # get safety params for an ais vessel, ais has to be pre processed
@@ -219,6 +224,7 @@ class ARPA:
         return safety_params
 
     def _process_data(self):
+        self._running = True 
         processed_data = []
         gunn_data = self._get_gunnerus_data()
         if gunn_data is None: return None
@@ -228,11 +234,10 @@ class ARPA:
         if (self.dummy_vessel is not None):
             ais_data['dummy'] =  self.dummy_vessel
         
-        ais_msg_ids = ais_data.keys()
-
-        print(gunn_data)
+        ais_msg_ids = ais_data.keys() 
 
         for ais_id in ais_msg_ids:
+            if not self._running: return None, None
             ais_message = ais_data[ais_id]
 
             if str(ais_message['mmsi']) == self._gunnerus_mmsi: continue
@@ -252,5 +257,6 @@ class ARPA:
         return gunn_data, processed_data
 
     def get_ARPA_parameters(self):
-        processed_data, gunn_data = self._process_data()
+        gunn_data, processed_data = self._process_data()
+        return gunn_data, processed_data
         

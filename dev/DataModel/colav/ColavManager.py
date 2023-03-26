@@ -1,6 +1,7 @@
 from utils.DashboardWebsocket import DashboardWebsocket
 from simulation.SimulationTransform import SimulationTransform
 from colav.ARPA import ARPA
+from colav.CBF import CBF
 import json
 import math
 import copy
@@ -34,6 +35,7 @@ class ColavManager:
             safety_radius_tol= self._safety_radius_tol, 
             transform= self._transform,
             gunnerus_mmsi=self.gunnerus_mmsi) 
+        self._cbf = CBF(safety_radius_m= self._safety_radius_m)
     
     def update_gunnerus_data(self, data): 
         self._gunnerus_data = data 
@@ -47,16 +49,16 @@ class ColavManager:
 
     def stop(self):
         self._running = False
+        self._cbf.stop()
         print('Colav Manager: Stop') 
 
     def _update(self): 
         print("start update", time.time())
         self._arpa.update_gunnerus_data(self._gunnerus_data)
         self._arpa.update_ais_data(self._ais_data)
-        self._arpa.get_ARPA_parameters()
-        # msg = self._check_intersects()
-        # if(self.websocket.enable):
-            # self.websocket.send(self._compose_intersect_msg(msg)) 
+        arpa_gunn_data, arpa_data = self._arpa.get_ARPA_parameters() 
+        self._cbf.update_cbf_data(arpa_gunn_data, arpa_data)
+        cbf_data = self._cbf.get_cbf_data() 
         print("end update", time.time())
 
     def start(self):
