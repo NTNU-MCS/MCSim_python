@@ -119,7 +119,7 @@ class DataModel:
         self.local_address = (socket.gethostname(), 5000) 
         self.sc_buffer_sz = 1024
         self.distance_filter = 1
-        self.ws_enable= False
+        self.ws_enable= True
         self.ws_address= "ws://127.0.0.1:8000"
         self.websocket = DashboardWebsocket(self.ws_address, self.ws_enable)
         self.dummy_gunnerus = {
@@ -145,7 +145,8 @@ class DataModel:
             gunnerus_mmsi = self.gunnerus_mmsi,
             dummy_gunnerus= None,
             dummy_vessel= None,
-            safety_radius_m=2000
+            safety_radius_m=500,
+            safety_radius_tol=1.5
             )
 
         self.UDP_SimulationServer = SimulationServer(

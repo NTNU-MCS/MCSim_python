@@ -10,7 +10,8 @@ class DashboardWebsocket:
             self.ws = websocket.create_connection(address)
     
     def send(self, json_msg):
-        self.ws.send(json_msg)
+        if self.enable:
+            self.ws.send(json_msg)
 
     def close(self):
         if self.enable: 

@@ -246,7 +246,7 @@ class ARPA:
 
             if ais_data_item is None: continue
 
-            cpa = self._get_cpa(gunn_data, ais_data_item)
+            cpa = self._get_cpa(gunn_data, ais_data_item) 
             is_within_safety_distance = cpa['d_at_cpa'] <= (self._safety_radius_m * self._safety_radius_tol)
             
             if  is_within_safety_distance and cpa['t_2_cpa'] >= 0:
@@ -256,7 +256,60 @@ class ARPA:
 
         return gunn_data, processed_data
 
+    def convert_arpa_params(self, arpa_data, gunn_data):  
+        lon = gunn_data['lon']
+        lat = gunn_data['lat']
+        converted_data = []
+
+        for arpa_msg in arpa_data:
+            arpa_out = {}
+            po_x = arpa_msg['po_x']
+            po_y = arpa_msg['po_y']
+            lat_o, lon_o = self._transform.xyz_to_coords(po_x, po_y, lat, lon)
+            uo = arpa_msg['po_y']
+            zo = arpa_msg['zo']
+            d_at_cpa = arpa_msg['cpa']['d_at_cpa']
+            x_at_cpa = arpa_msg['cpa']['x_at_cpa']
+            y_at_cpa = arpa_msg['cpa']['y_at_cpa']
+            lat_at_cpa, lon_at_cpa = self._transform.xyz_to_coords(x_at_cpa, y_at_cpa, lat, lon)
+            o_x_at_cpa = arpa_msg['cpa']['o_x_at_cpa']
+            o_y_at_cpa = arpa_msg['cpa']['o_y_at_cpa']
+            lat_o_at_cpa, lon_o_at_cpa = self._transform.xyz_to_coords(o_x_at_cpa, o_y_at_cpa, lat, lon)
+            arpa_out['t_2_cpa'] = arpa_msg['cpa']['t_2_cpa']
+            arpa_out['lat_o'] = lat_o
+            arpa_out['lon_o'] = lon_o
+            arpa_out['uo'] = uo
+            arpa_out['zo'] = zo
+            arpa_out['d_at_cpa'] = d_at_cpa
+            arpa_out['lat_at_cpa'] = lat_at_cpa
+            arpa_out['lon_at_cpa'] = lon_at_cpa
+            arpa_out['lat_o_at_cpa'] = lat_o_at_cpa
+            arpa_out['lon_o_at_cpa'] = lon_o_at_cpa
+
+            if arpa_msg['safety_params'] is not None:
+                safety_params = True
+                t_2_r = arpa_msg['safety_params']['t_2_r']
+                t_x_at_r = arpa_msg['safety_params']['t_x_at_r']
+                t_y_at_r= arpa_msg['safety_params']['t_y_at_r']
+                lat_o_at_r, lon_o_at_r = self._transform.xyz_to_coords(t_x_at_r, t_y_at_r, lat, lon)
+                x_at_r= arpa_msg['safety_params']['x_at_r']
+                y_at_r= arpa_msg['safety_params']['y_at_r']
+                lat_at_r, lon_at_r = self._transform.xyz_to_coords(x_at_r, y_at_r, lat, lon)
+                arpa_out['safety_params'] = safety_params
+                arpa_out['t_2_r'] = t_2_r
+                arpa_out['lat_o_at_r'] = lat_o_at_r
+                arpa_out['lon_o_at_r'] = lon_o_at_r
+                arpa_out['lat_at_r'] = lat_at_r
+                arpa_out['lon_at_r'] = lon_at_r
+                arpa_out['safety_radius'] = self._safety_radius_m
+            else:
+                safety_params = False
+                arpa_out['safety_params'] = False
+            
+            converted_data.append(arpa_out)
+        return converted_data 
+        
     def get_ARPA_parameters(self):
-        gunn_data, processed_data = self._process_data()
+        gunn_data, processed_data = self._process_data() 
         return gunn_data, processed_data
         

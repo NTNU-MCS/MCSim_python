@@ -11,9 +11,11 @@ from utils.Point import Point
 
 class ColavManager:
     def __init__(self, enable = True, update_interval = 1, 
-                safety_radius_m = 200, safety_radius_tol = 0.5,
+                safety_radius_m = 200, safety_radius_tol = 1.5,
                 gunnerus_mmsi ='' ,websocket=DashboardWebsocket, 
                 dummy_gunnerus = None, dummy_vessel = None):
+        self._cbf_message_id = 'cbf'
+        self._arpa_message_id = 'arpa'
         self._gunnerus_data = {}
         self._ais_data = {}
         self.websocket = websocket
@@ -52,13 +54,28 @@ class ColavManager:
         self._cbf.stop()
         print('Colav Manager: Stop') 
 
+    def _compose_colav_msg(self, msg, message_id):
+        msg_type = 'datain'
+            
+        content = {
+            'message_id': message_id,
+            'data': msg
+            }
+        
+        return(json.dumps({
+            "type": msg_type,
+            "content": content
+            },default=str))
+
     def _update(self): 
         print("start update", time.time())
         self._arpa.update_gunnerus_data(self._gunnerus_data)
         self._arpa.update_ais_data(self._ais_data)
-        arpa_gunn_data, arpa_data = self._arpa.get_ARPA_parameters() 
-        self._cbf.update_cbf_data(arpa_gunn_data, arpa_data)
-        cbf_data = self._cbf.get_cbf_data() 
+        arpa_gunn_data, arpa_data = self._arpa.get_ARPA_parameters()  
+        converted_arpa_data = self._arpa.convert_arpa_params(arpa_data, arpa_gunn_data)
+        self.websocket.send(self._compose_colav_msg(converted_arpa_data, self._arpa_message_id))
+        # self._cbf.update_cbf_data(arpa_gunn_data, arpa_data)
+        # cbf_data = self._cbf.get_cbf_data() 
         print("end update", time.time())
 
     def start(self):
