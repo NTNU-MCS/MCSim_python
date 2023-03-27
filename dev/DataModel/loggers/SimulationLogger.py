@@ -38,26 +38,18 @@ class SimulationLogger(Logger):
                     msg_atr.append(atr_name)   
 
             # ToDo: awful, inefficient, do better check and skip redundancy
-            try: 
-                alias_list = dict(self.df_aliases)[msg_id] 
+            if msg_id in self.df_aliases: 
+                alias_list = self.df_aliases[msg_id] 
                 if len(alias_list) == len(msg_atr):
-                    for i , item in enumerate(msg_atr): 
-                        msg_atr[i] = alias_list[i]
-            except: 
-                pass
+                    for i , alias in enumerate(alias_list): 
+                        msg_atr[i] = alias 
 
             # ToDo: Probably very inefficient x2
             if metadata is not None: 
                 msg_values.extend(metadata)
-                msg_atr.extend(self.metadata_atr_names)
+                msg_atr.extend(self.metadata_atr_names) 
 
-            # ToDo: handle conversion errors better 'ignore'
-            df = pd.DataFrame(
-                {msg_atr[i]: [pd.to_numeric(msg_values[i], errors='ignore')] 
-                for i in range(len(msg_values))}
-                )
-            message = df.fillna('').to_dict() 
-            message = {k: v[0] for k, v in message.items()}
+            message = dict(zip(msg_atr, msg_values))  
             message['message_id'] = msg_id  
             self.sorted_data.append(message) 
             return 
@@ -92,6 +84,6 @@ class SimulationLogger(Logger):
 
         while self._running: 
             self._log_buffered_message() 
-            # print('parser: ', len(self._buffer_data), ' buffer: ', len(self.sorted_data))
+            print('parser: ', len(self._buffer_data), ' buffer: ', len(self.sorted_data))
         # ToDo: handle loose ends on terminating process.
         print('DataLogger stopped.')

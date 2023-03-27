@@ -11,9 +11,11 @@ from utils.Point import Point
 
 class ColavManager:
     def __init__(self, enable = True, update_interval = 1, 
-                safety_radius_m = 200, safety_radius_tol = 1.5,
-                gunnerus_mmsi ='' ,websocket=DashboardWebsocket, 
-                dummy_gunnerus = None, dummy_vessel = None):
+                safety_radius_m = 200, safety_radius_tol = 1.5, 
+                max_d_2_cpa = 2000, gunnerus_mmsi ='' ,
+                websocket=DashboardWebsocket,  dummy_gunnerus = None,
+                dummy_vessel = None):
+        
         self._cbf_message_id = 'cbf'
         self._arpa_message_id = 'arpa'
         self._gunnerus_data = {}
@@ -30,19 +32,28 @@ class ColavManager:
         self._safety_radius_tol = safety_radius_tol
         self._safety_radius_nm = self._transform.m_to_nm(safety_radius_m)
         self._safety_radius_deg = self._transform.nm_to_deg(self._safety_radius_nm)
+        self._max_d_2_cpa = max_d_2_cpa
         self.dummy_gunnerus = dummy_gunnerus
         self.dummy_vessel = dummy_vessel
         self._arpa = ARPA(
             safety_radius_m= self._safety_radius_m,
             safety_radius_tol= self._safety_radius_tol, 
+            max_d_2_cpa= self._max_d_2_cpa,
             transform= self._transform,
             gunnerus_mmsi=self.gunnerus_mmsi) 
         self._cbf = CBF(safety_radius_m= self._safety_radius_m)
     
     def update_gunnerus_data(self, data): 
-        self._gunnerus_data = data 
+        if self.dummy_gunnerus is not None:
+            self._gunnerus_data = self.dummy_gunnerus
+        else:
+            self._gunnerus_data = data 
     
     def update_ais_data(self, data):
+        if self.dummy_vessel is not None:
+            message_id = "dummy"
+            self._ais_data[message_id] = self.dummy_vessel
+
         message_id = data["message_id"]
         self._ais_data[message_id] = data  
     
@@ -69,6 +80,12 @@ class ColavManager:
 
     def _update(self): 
         print("start update", time.time())
+        if self.dummy_vessel is not None:
+            self.websocket.send(json.dumps({
+            "type": 'datain',
+            "content": self.dummy_vessel
+            },default=str)
+                )
         self._arpa.update_gunnerus_data(self._gunnerus_data)
         self._arpa.update_ais_data(self._ais_data)
         arpa_gunn_data, arpa_data = self._arpa.get_ARPA_parameters()  

@@ -86,10 +86,10 @@ class DataModel:
         self.df_path = os.path.join(self.abs_path, './DataFrames')
 
         # ToDo: create class for holding these tuples
-        self.df_aliases = [
-            ('$PSIMSNS',['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum']),
-            ('$PSIMSNS_ext',['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum']),
-        ]
+        self.df_aliases = {
+            '$PSIMSNS': ['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum'],
+            '$PSIMSNS_ext': ['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum'],
+        }
 
         self.save_dataframes = (False, self.df_path)
         self.overwrite_headers = True
@@ -123,21 +123,24 @@ class DataModel:
         self.ws_address= "ws://127.0.0.1:8000"
         self.websocket = DashboardWebsocket(self.ws_address, self.ws_enable)
         self.dummy_gunnerus = {
-            'lat': 6228.4822,
-            'lat_dir': 'W',
-            'lon': 609.1721,
+            'lat': 6326.4332,
+            'lat_dir': 'E',
+            'lon': 1021.3694,
             'lon_dir': 'N',
-            'true_course': 270,
+            'true_course':90,
             'spd_over_grnd': 100,
             }
         self.dummy_vessel = {
-            'lon': 6.15405, 
-            'lat': 62.473457, 
-            'course': -30,
-            'speed': 100,
-            'mmsi': 3143757
+            'lon': 10.411033, 
+            'lat': 63.458227, 
+            'course': 135,
+            'heading': 90,
+            'speed': 10,
+            'mmsi': 3143757,
+            'message_id': "!AI_ext_dummy",
+            'pos_history': [[10.411033, 63.458227]],
             }
-
+        
         self.Colav_Manager = ColavManager(
             enable=True, 
             update_interval=10,
@@ -146,7 +149,8 @@ class DataModel:
             dummy_gunnerus= None,
             dummy_vessel= None,
             safety_radius_m=500,
-            safety_radius_tol=1.5
+            safety_radius_tol=1.5,
+            max_d_2_cpa=3000 
             )
 
         self.UDP_SimulationServer = SimulationServer(
@@ -156,8 +160,9 @@ class DataModel:
             websocket=self.websocket,
             transform=self.UDP_Sim_Frame_transform,
             distance_filter=self.distance_filter,
+            predicted_interval=60,
             colav_manager=self.Colav_Manager
-            ) 
+            )  
         
         # Create new threads
         self.thread_udp_stream = Thread(target=self.UDP_Stream.start) 

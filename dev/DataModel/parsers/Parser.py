@@ -113,9 +113,7 @@ class Parser:
         if (not self._is_id_valid(tag)): 
             return
 
-        if metadata is None:
-            self.parsed_msg_list.insert(0, (tag, parsed_msg)) 
-        else:
+        if metadata is not None: 
             tag = tag + self.extended_msg_suffix
             self.parsed_msg_list.insert(0, (tag, parsed_msg, metadata)) 
         self.parsed_msg_list_size = sys.getsizeof(self.parsed_msg_list) 
