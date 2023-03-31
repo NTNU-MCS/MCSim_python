@@ -88,7 +88,7 @@ class StreamParser(Parser):
 
             raw_msg = self._s.recv(self._buffer_size)  
             lines = raw_msg.decode('ascii').splitlines()
-            for line in lines:
+            for line in lines: 
                 self._parse_message(line.encode('ascii')) 
 
             if self._log_stream:

@@ -176,7 +176,7 @@ class DataModel:
         self.thread_sim_server.start()
         self.thread_colav_manager.start() 
 
-    def stop(self):
+    def stop(self): 
         self.UDP_Stream.stop()
         self.UDP_DataLogger.stop() 
         self.UDP_SimulationServer.stop()

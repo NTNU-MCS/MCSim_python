@@ -84,8 +84,7 @@ class SimulationServer:
         return array
 
     def _filter_outliers(self, next = (0,0), hist=[], m=2):
-        if len(hist) > 0.5*self.ais_history_len:
-            print('1', hist)
+        if len(hist) > 0.5*self.ais_history_len: 
             t_arr = np.array(hist)
             t1 = t_arr[:,0]
             t2 = t_arr[:,1]
@@ -101,8 +100,7 @@ class SimulationServer:
             b = np.where((t2-m2) > 1.5 * sdev2)
             r_arr = self.replace_outliers(a, t1, m_t1_diff)
             r_arr2 = self.replace_outliers(b, t2, m_t2_diff)
-            filtered = np.stack((r_arr, r_arr2)).T.tolist()
-            print(filtered)
+            filtered = np.stack((r_arr, r_arr2)).T.tolist() 
             return filtered
         else: return hist
 

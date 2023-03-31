@@ -6,8 +6,8 @@ class DashboardWebsocket:
         self.enable = enable
 
         if enable:
-            websocket.enableTrace(True) 
-            self.ws = websocket.create_connection(address)
+            websocket.enableTrace(False) 
+            self.ws = websocket.create_connection(address) 
     
     def send(self, json_msg):
         if self.enable:

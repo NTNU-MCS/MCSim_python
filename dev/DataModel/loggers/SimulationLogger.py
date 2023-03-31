@@ -83,7 +83,6 @@ class SimulationLogger(Logger):
         print('DataLogger running.')
 
         while self._running: 
-            self._log_buffered_message() 
-            print('parser: ', len(self._buffer_data), ' buffer: ', len(self.sorted_data))
-        # ToDo: handle loose ends on terminating process.
+            self._log_buffered_message()  
+        # ToDo: handle loose ends on terminating process. 
         print('DataLogger stopped.')
