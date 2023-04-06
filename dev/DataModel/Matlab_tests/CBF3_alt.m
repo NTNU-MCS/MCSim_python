@@ -3,63 +3,78 @@ clearvars
 close all
 
 %% constants
-self.S = [0 -1; 1 0];
+self.S = [0 1; -1 0];
 self.k1 = 1;
 self.lambda = 0.5;
-self.P = diag([1e20, 1]);
+self.P = diag([1,10]);
 self.dq = 200;
-self.dt = 1;
-self.gamma_2 = 1;
-self.sigma = 1;
+self.dt = 0.1;
+self.gamma_1 = 0.01;
+self.gamma_2 = 0.01;
+self.sigma = 27.0;
 self.t = 1;
 self.t_t = 0;
-self.t_tot = 600;
+self.t_tot = 200;
 self.hist = zeros(20,1);
 self.arpa = [];
 
 %% initialize
 rd = 0;
 p = [0; 0];
-u = 11;
-psi = deg2rad(90);
+u = 10;
+psi = deg2rad(55);
 z = [sin(psi); cos(psi)];
 tq = [sin(psi); cos(psi)];
 [ux, uy] = get_u_xy(z,u);
 
-po = [1000 1500; -100  100];
+po = [1150 1500; 600 -300];
 self.n_po= size(po,2);
-uo = [2 8];
-psio = [ deg2rad(0) deg2rad(-90)];
+uo = [10 0];
+psio = [deg2rad(-90), deg2rad(-40)];
 zo = [sin(psio); cos(psio)];
 [uo_x, uo_y] = get_uo_xy(zo,uo);
+
 
 [fa, fb] = get_f(z, zo, u, uo);
 g = get_g(self, z);
 
 [d_at_cpa, t_2_cpa, p_at_cpa, po_at_cpa, t_2_r ,p_at_r, po_at_r] = get_arpa(self, ux, uy, uo_x, uo_y, p, po);
 self.arpa = [d_at_cpa; t_2_cpa; p_at_cpa; po_at_cpa; t_2_r; p_at_r; po_at_r];
-% figure("Name",'arpa')
-% plot_arpa(self, p, po)
-% hold on
+figure("Name",'arpa')
+plot_arpa(self, p, po)
+hold on
 %% main loop
 while self.t_t <= self.t_tot
     self.hist(1:2,self.t) = p;
     self.hist(3:4,self.t) = z;
     self.hist(5,self.t) = rd;
-    self.hist(6: 5 + self.n_po*2, self.t) = reshape(po,[self.n_po*2,1]); 
-    
-    %% find rd 
-    rdc = real(get_nominal_control(self, z, tq));
+    self.hist(6: 5 + self.n_po*2, self.t) = reshape(po,[self.n_po*2,1]);
+
+    rd = real(get_nominal_control(self, z, tq));
+
+    ub = [rd, linspace(-1,1,31)];
+    %% find rd
+    min_ub = Inf;
     pe = p-po;
-    B1 = get_B1(self, pe); 
-    rd = get_safe_control(self, pe, z, B1, u, rdc);
+    B1 = get_B1(self, p, po, tq);
+    B1_dot = get_B1_dot(po, u, z, uo, zo, tq); 
+    B2 = B1_dot + self.gamma_1 * B1;
+    for c = 1:size(ub,2)
+        rdc = ub(c);
+        B2_dot = get_B2_dot(self, po, uo, zo, u, z, rdc, tq);
+        if (all(B2_dot <= -self.gamma_2 * B2))
+            if (min_ub) == Inf || norm(rd - rdc) < norm(rd - min_ub)
+                min_ub = rdc;
+            end
+        end
+    end
+    rd= min_ub;
     [fa, fb] = get_f(z, zo, u, uo);
     g = get_g(self, z);
 
     p = p + fa*self.dt;
     po = po + fb*self.dt;
-    zd = (z + self.S*z*rd*self.dt);
-    z = zd/norm(zd);
+    z = z + g(5:6)*rd*self.dt;
 
     self.t_t = self.t_t + self.dt;
     self.t =self.t+1;
@@ -150,60 +165,24 @@ uo_x = y(1,:);
 uo_y = y(2,:);
 end
 
-function y = get_safe_control(self, pe, z, B1, u, rdc)
-alpha_B1 = get_alpha(self, B1, u) ;
-B1_dot = get_B1_dot(pe, u, z);
-B2 = B1_dot + alpha_B1;
-[B2_dot,b_2] = get_B2_dot(self, pe, z, B1, u, rdc);
-rdcs_h = zeros(1,size(pe,2));
-distances = vecnorm(pe,2,1);
-[~,closest] = min(distances(:));
-
-if (all(B2_dot <= -self.gamma_2 * B2))
-    y = rdc;
-    return
-else
-    a = B2_dot + self.gamma_2 * B2;
-    for i = 1:size(pe,2)
-        b = b_2(i,:)*self.P^(-0.5);
-        rdcs = (rdc - (a(:,i)*b')/(b*b'));
-        rdcs_h(i) = rdcs(2);
-        [B2_dot,] = get_B2_dot(self, pe, z, B1, u, rdcs(2));
-        if (all(B2_dot <= -self.gamma_2 * B2))
-            y = rdcs(2);
-            return
-        end
-    end
-end
-y = rdcs_h(closest);
-end
-
-function y = get_alpha(self, B, u)
-y = u*atan(B/self.sigma);
-end
-
-function [a,b] = get_B2_dot(self, pe, z, B1, u, rdc)
-a = zeros([1, size(pe,2)]);
-b = zeros([size(pe,2),2]);
-for i = 1:size(pe,2)
-    e = pe(:,i)'/norm(pe(:,i));
-    b(i,:) = - e*[z, u*self.S*z];
-    a(i) = -(u^2/norm(pe(:,i)))*(e*self.S'*z)^2 - (u*self.sigma/(self.sigma^2 + B1(i)^2))*e*u*z + b(i,:)*[0;rdc];
-   
+function y = get_B2_dot(self, po, uo, zo, u, z, rdc, tq)
+y = zeros([1, size(po,2)]);
+for i = 1:size(po,2) 
+    y(i) = -self.gamma_1*tq'*u*z + self.gamma_1*tq'*uo(:,1)*zo(:,i) - tq'*u*(self.S*z)*rdc;
 end
 end
 
-function y = get_B1_dot(pe, u, z)
-y = zeros([1, size(pe,2)]);
-for i = 1:size(pe,2)
-    y(i) = -(pe(:,i)'/norm(pe(:,i)))*u*z ;
+function y = get_B1_dot(po, u, z, uo, zo, tq)
+y = zeros([1, size(po,2)]);
+for i = 1:size(po,2)
+    y(i) = -tq'*(u*z - uo(:,i)*zo(:,i)) ;
 end
 end
 
-function y = get_B1(self, pe)
-y = zeros([1, size(pe,2)]);
-for i = 1:size(pe,2)
-    y(i) = self.dq-norm(pe(:,i));
+function y = get_B1(self, p, po, tq)
+y = zeros([1, size(po,2)]);
+for i = 1:size(po,2)
+    y(i) = self.dq- tq'*(p - po(:,i));
 end
 end
 
@@ -263,9 +242,8 @@ end
 hold off
 
 figure('Name','orientation');
-% angle_t_s = atan(self.hist(3,1:tot)./ self.hist(4,1:tot));
-% angle_t_s = rad2deg(angle_t_s);
-angle_t_s = vecnorm(self.hist(3:4,1:tot), 2, 1);
+angle_t_s = atan(self.hist(3,1:tot)./ self.hist(4,1:tot));
+angle_t_s = rad2deg(angle_t_s);
 plot(angle_t_s);
 
 % figure('Name','B');
