@@ -123,12 +123,12 @@ class DataModel:
         self.ws_address= "ws://127.0.0.1:8000"
         self.websocket = DashboardWebsocket(self.ws_address, self.ws_enable)
         self.dummy_gunnerus = {
-            'lat': 6326.4332,
+            'lat': 6326.3042,
             'lat_dir': 'E',
-            'lon': 1021.3694,
+            'lon': 1024.5377,
             'lon_dir': 'N',
-            'true_course':90,
-            'spd_over_grnd': 100,
+            'true_course':-90,
+            'spd_over_grnd': 10,
             }
         self.dummy_vessel = {
             'lon': 10.411033, 
@@ -146,11 +146,11 @@ class DataModel:
             update_interval=10,
             websocket=self.websocket,
             gunnerus_mmsi = self.gunnerus_mmsi,
-            dummy_gunnerus= None,
+            dummy_gunnerus= self.dummy_gunnerus,
             dummy_vessel= None,
-            safety_radius_m=500,
+            safety_radius_m=200,
             safety_radius_tol=1.5,
-            max_d_2_cpa=3000 
+            max_d_2_cpa=2000 
             )
 
         self.UDP_SimulationServer = SimulationServer(

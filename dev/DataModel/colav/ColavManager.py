@@ -35,13 +35,17 @@ class ColavManager:
         self._max_d_2_cpa = max_d_2_cpa
         self.dummy_gunnerus = dummy_gunnerus
         self.dummy_vessel = dummy_vessel
+
         self._arpa = ARPA(
             safety_radius_m= self._safety_radius_m,
             safety_radius_tol= self._safety_radius_tol, 
             max_d_2_cpa= self._max_d_2_cpa,
             transform= self._transform,
             gunnerus_mmsi=self.gunnerus_mmsi) 
-        self._cbf = CBF(safety_radius_m= self._safety_radius_m)
+        
+        self._cbf = CBF(
+            safety_radius_m= self._safety_radius_m,
+            transform= self._transform)
     
     def update_gunnerus_data(self, data): 
         if self.dummy_gunnerus is not None:
@@ -79,7 +83,7 @@ class ColavManager:
             },default=str))
 
     def _update(self): 
-        print("start update", time.time())
+        start = time.time()
         if self.dummy_vessel is not None:
             self.websocket.send(json.dumps({
             "type": 'datain',
@@ -90,10 +94,15 @@ class ColavManager:
         self._arpa.update_ais_data(self._ais_data)
         arpa_gunn_data, arpa_data = self._arpa.get_ARPA_parameters()  
         converted_arpa_data = self._arpa.convert_arpa_params(arpa_data, arpa_gunn_data)
-        self.websocket.send(self._compose_colav_msg(converted_arpa_data, self._arpa_message_id))
-        # self._cbf.update_cbf_data(arpa_gunn_data, arpa_data)
-        # cbf_data = self._cbf.get_cbf_data() 
-        print("end update", time.time())
+        self.websocket.send(self._compose_colav_msg(converted_arpa_data, self._arpa_message_id)) 
+        self._cbf.update_cbf_data(arpa_gunn_data, arpa_data)
+        cbf_data = self._cbf.get_cbf_data() 
+        converted_cbf_data = self._cbf.convert_data(cbf_data)
+        compose_cbf = self._compose_colav_msg(converted_cbf_data, self._cbf_message_id)
+        print(compose_cbf)
+        self.websocket.send(compose_cbf)
+        end = time.time()
+        print("end update Arpa + CBF", end-start)
 
     def start(self):
         if self.enable: 

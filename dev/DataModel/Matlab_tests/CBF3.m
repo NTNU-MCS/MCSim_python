@@ -8,7 +8,7 @@ self.k1 = 1;
 self.lambda = 0.5;
 self.P = diag([1e20, 1]);
 self.dq = 200;
-self.dt = 1;
+self.dt = 0.1;
 self.gamma_2 = 1;
 self.sigma = 1;
 self.t = 1;
@@ -154,8 +154,7 @@ function y = get_safe_control(self, pe, z, B1, u, rdc)
 alpha_B1 = get_alpha(self, B1, u) ;
 B1_dot = get_B1_dot(pe, u, z);
 B2 = B1_dot + alpha_B1;
-[B2_dot,b_2] = get_B2_dot(self, pe, z, B1, u, rdc);
-rdcs_h = zeros(1,size(pe,2));
+[B2_dot,b_2] = get_B2_dot(self, pe, z, B1, u, rdc); 
 distances = vecnorm(pe,2,1);
 [~,closest] = min(distances(:));
 
@@ -163,19 +162,11 @@ if (all(B2_dot <= -self.gamma_2 * B2))
     y = rdc;
     return
 else
-    a = B2_dot + self.gamma_2 * B2;
-    for i = 1:size(pe,2)
-        b = b_2(i,:)*self.P^(-0.5);
-        rdcs = (rdc - (a(:,i)*b')/(b*b'));
-        rdcs_h(i) = rdcs(2);
-        [B2_dot,] = get_B2_dot(self, pe, z, B1, u, rdcs(2));
-        if (all(B2_dot <= -self.gamma_2 * B2))
-            y = rdcs(2);
-            return
-        end
-    end
-end
-y = rdcs_h(closest);
+    a = B2_dot + self.gamma_2 * B2; 
+    b = b_2(closest,:)*self.P^(-0.5);
+    rdcs = (rdc - (a(:,closest)*b')/(b*b')); 
+    y = rdcs(2);  
+end 
 end
 
 function y = get_alpha(self, B, u)
