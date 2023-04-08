@@ -2,11 +2,12 @@ import math
 import numpy as np 
 import copy 
 from simulation.SimulationTransform import SimulationTransform 
+from time import time
 
 
 class CBF:
     def __init__(self, safety_radius_m ,k1 = 1, lam = 0.5, dt = 1, gamma_2 = 1,
-                sigma = 1.0, t = 0, t_t = 0, t_tot = 60, rd_max = 1, n_ub = 20, 
+                sigma = 1.0, t = 0, t_t = 0, t_tot = 150, rd_max = 1, n_ub = 20, 
                 P=np.diagflat([0,1]), transform=SimulationTransform()): 
         self._safety_radius_m = safety_radius_m
         self._gunn_data = {}
@@ -50,30 +51,24 @@ class CBF:
         return p ,u ,z ,tq, po, zo, uo
     
     def _get_f(self, z, zo, u, uo):
-        p_dot = z*u
-        po_dot = np.multiply(zo, uo)
-        return p_dot, po_dot
+        p_dot = z*u 
+        return p_dot
 
     def _get_g(self, z):  
         return self._S @ z
     
-    def _get_B1_dot(self, pe, u, z):
-        B1_dot = []
-        for col in pe.T: 
-            res = -(col/np.linalg.norm(col)) @ z* u 
-            B1_dot = np.append(B1_dot, res)  
-        return B1_dot
+    def _get_B1_dot(self, pe_unit, u, z): 
+        B1_dot = -pe_unit.T  @ z.reshape((2,1)) * u
+        return  np.ravel(B1_dot)
     
-    def _get_B2_dot(self, pe, z, B1, u, rdc): 
+    def _get_B2_dot(self, pe_unit, pe_norm, z, B1, u, rdc): 
         B2_dot  = np.empty((self._ais_data_len))
-        L_g_B2 =  np.empty([self._ais_data_len, 2])
-        norm_pe = np.linalg.norm(pe, axis=0) 
-        e = pe / norm_pe  
+        L_g_B2 =  np.empty([self._ais_data_len, 2]) 
 
         for i in range(self._ais_data_len):   
-            _e = np.ravel(e[:,i])  
+            _e = np.ravel(pe_unit[:,i])  
             L_g_B2[i,:] = _e @ np.concatenate((z, u*self._S @ z), axis=1)
-            B2_dot[i] = (-(u**2/norm_pe[i])*(_e @ self._S.T @ z)**2 -
+            B2_dot[i] = (-(u**2/pe_norm[i])*(_e @ self._S.T @ z)**2 -
             (u*self._sigma/(self._sigma**2 + B1[i]**2)) * _e @ z * u  - 
             L_g_B2[i,:]@ np.array([[0], [rdc]]))
         return B2_dot, L_g_B2 
@@ -83,48 +78,43 @@ class CBF:
         rd = (-self._k1 * z_tilde[1]) / math.sqrt(1 - self._lam**2 * z_tilde[0]**2)
         return rd
 
-    def _get_safe_control(self, pe, z, B1, u, rd_n): 
+    def _get_safe_control(self, pe_unit, pe_norm, z, B1, u, rd_n): 
         alpha_B1 = u*np.arctan(B1/self._sigma)
-        B1_dot = self._get_B1_dot(pe, u, z) 
-        B2 = B1_dot + alpha_B1
-        B2_dot, L_g_B2 = self._get_B2_dot(pe, z, B1, u, rd_n) 
-        distances = np.linalg.norm(pe, axis=0)  
-        closest = np.argmin(distances) 
+        B1_dot = self._get_B1_dot(pe_unit, u, z)
+        B2 = B1_dot.T + alpha_B1
+        B2_dot, L_g_B2 = self._get_B2_dot(pe_unit, pe_norm, z, B1, u, rd_n)  
+        closest = np.argmin(pe_norm) 
         if np.all(B2_dot <= self._gamma_2 * B2): 
             return rd_n
         else:
             a = B2_dot + self._gamma_2 * B2 
-            b = np.array([0, L_g_B2[closest,1]]) 
+            b = np.array([0, L_g_B2[closest,1]])
             rds = rd_n - ((a[closest] * b.T) /(b @ b.T))  
             return rds[0,1] 
 
     def _process_data(self, p ,u ,z ,tq, po, zo, uo):  
         self._running = True
         
-        t = 0
-        t_t = 0
-        # h_z = np.empty((2, self._hist_len))
-        h_p = np.empty((2, self._hist_len))
-        # h_rd = np.empty((self._hist_len))
-        # h_po = np.empty((self._ais_data_len*2, self._hist_len))   
+        t = 0 
+        h_p = np.empty((2, self._hist_len)) 
 
-        for t in range(self._hist_len):  
-            if not self._running: return None
-            # h_z[:,t] = z.T
-            h_p[:,t] = p.T
-            # h_rd[t] = 0
-            # h_po[:, t] = np.reshape(po, self._ais_data_len*2)
+        po_dot = np.multiply(zo, uo) 
+        po_vec = po.T.reshape((-1,1)) + np.arange(self._hist_len) * po_dot.T.reshape((-1,1)) * self._dt 
+        for t in range(self._hist_len): 
+            if not self._running: return None 
+            h_p[:,t] = p.T 
             # find safe input
             rd_n = self._get_nominal_control(z, tq)
-            pe = p - po
-            B1 = self._safety_radius_m -np.linalg.norm(pe, axis=0)  
-            rd = self._get_safe_control(pe, z, B1, u, rd_n)  
-            p_dot, po_dot = self._get_f(z, zo, u, uo) 
+            pe = p - po_vec[:, t].reshape(2,-1, order='F')
+            pe_norm = np.linalg.norm(pe, axis=0) 
+            pe_unit = pe / pe_norm 
+            B1 = self._safety_radius_m -pe_norm
+            rd = self._get_safe_control(pe_unit, pe_norm, z, B1, u, rd_n) 
+            p_dot = self._get_f(z, zo, u, uo) 
             z_dot = self._get_g(z) 
-            p = p + p_dot*self._dt
-            po = po + po_dot*self._dt
+            p = p + p_dot*self._dt  
             z = z + z_dot*rd*self._dt 
-            z = z/np.linalg.norm(z)   
+            z = z/np.linalg.norm(z)  
         cbf_data =  {"p": h_p}
         return cbf_data
     
