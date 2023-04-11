@@ -20,16 +20,16 @@ self.arpa = [];
 %% initialize
 rd = 0;
 p = [0; 0];
-u = 11;
-psi = deg2rad(90);
+u = 6;
+psi = deg2rad(-90);
 z = [sin(psi); cos(psi)];
 tq = [sin(psi); cos(psi)];
 [ux, uy] = get_u_xy(z,u);
 
-po = [1000 1500; -100  100];
+po = [-505 -1550; 500  1500];
 self.n_po= size(po,2);
-uo = [2 8];
-psio = [ deg2rad(0) deg2rad(-90)];
+uo = [4 7];
+psio = [ deg2rad(180) deg2rad(180)];
 zo = [sin(psio); cos(psio)];
 [uo_x, uo_y] = get_uo_xy(zo,uo);
 
@@ -52,7 +52,7 @@ while self.t_t <= self.t_tot
     rdc = real(get_nominal_control(self, z, tq));
     pe = p-po;
     B1 = get_B1(self, pe); 
-    rd = get_safe_control(self, pe, z, B1, u, rdc);
+    rd = get_safe_control(self, pe, z, B1, u, rdc, uo, zo);
     [fa, fb] = get_f(z, zo, u, uo);
     g = get_g(self, z);
 
@@ -150,44 +150,45 @@ uo_x = y(1,:);
 uo_y = y(2,:);
 end
 
-function y = get_safe_control(self, pe, z, B1, u, rdc)
+function y = get_safe_control(self, pe, z, B1, u, rdc, uo, zo)
 alpha_B1 = get_alpha(self, B1, u) ;
-B1_dot = get_B1_dot(pe, u, z);
+B1_dot = get_B1_dot(pe, u, z, uo, zo);
 B2 = B1_dot + alpha_B1;
-[B2_dot,b_2] = get_B2_dot(self, pe, z, B1, u, rdc); 
+[B2_dot,b_2] = get_B2_dot(self, pe, z, B1, u, rdc, uo, zo); 
 distances = vecnorm(pe,2,1);
 [~,closest] = min(distances(:));
 
-if (all(B2_dot <= -self.gamma_2 * B2))
+if (all(B2_dot <= -(1/self.gamma_2) * B2))
     y = rdc;
     return
 else
-    a = B2_dot + self.gamma_2 * B2; 
-    b = b_2(closest,:)*self.P^(-0.5);
+    a = B2_dot + (1/self.gamma_2)*B2; 
+    b = b_2(closest,:);
     rdcs = (rdc - (a(:,closest)*b')/(b*b')); 
     y = rdcs(2);  
 end 
 end
 
 function y = get_alpha(self, B, u)
-y = u*atan(B/self.sigma);
+y = (1/self.sigma)*B;
 end
 
-function [a,b] = get_B2_dot(self, pe, z, B1, u, rdc)
+function [a,b] = get_B2_dot(self, pe, z, B1, u, rdc, uo, zo)
 a = zeros([1, size(pe,2)]);
-b = zeros([size(pe,2),2]);
+b = zeros([1, size(pe,2)]);
 for i = 1:size(pe,2)
     e = pe(:,i)'/norm(pe(:,i));
-    b(i,:) = - e*[z, u*self.S*z];
-    a(i) = -(u^2/norm(pe(:,i)))*(e*self.S'*z)^2 - (u*self.sigma/(self.sigma^2 + B1(i)^2))*e*u*z + b(i,:)*[0;rdc];
-   
+    ei = pe(:,i);
+    b(i,:) = - u*e*self.S*z;
+    a(i) = ((ei'*(u*z-uo(i)*zo(:,i)))^2)/(norm(pe(:,i))^3) + ...
+    + norm((u*z-uo(i)*zo(:,i)))^2/norm(ei) + b(i)*rdc;
 end
 end
 
-function y = get_B1_dot(pe, u, z)
+function y = get_B1_dot(pe, u, z, uo, zo)
 y = zeros([1, size(pe,2)]);
 for i = 1:size(pe,2)
-    y(i) = -(pe(:,i)'/norm(pe(:,i)))*u*z ;
+    y(i) = -(pe(:,i)'/norm(pe(:,i)))*(u*z - uo(i)*zo(:,i)) ;
 end
 end
 

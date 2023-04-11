@@ -6,8 +6,8 @@ from time import time
 
 
 class CBF:
-    def __init__(self, safety_radius_m ,k1 = 1, lam = 0.5, dt = 1, gamma_2 = 1,
-                sigma = 1.0, t = 0, t_t = 0, t_tot = 150, rd_max = 1, n_ub = 20, 
+    def __init__(self, safety_radius_m ,k1 = 1, lam = 0.5, dt = 0.2, gamma_2 = 1,
+                sigma = 1.0, t_tot = 90, rd_max = 1, n_ub = 20, 
                 P=np.diagflat([0,1]), transform=SimulationTransform()): 
         self._safety_radius_m = safety_radius_m
         self._gunn_data = {}
@@ -37,10 +37,10 @@ class CBF:
         p = self._gunn_data['p']
         u = self._gunn_data['u']
         z = self._gunn_data['z']
-        tq = self._gunn_data['tq']
-        po = np.empty((2, self._ais_data_len))
-        zo = np.empty((2, self._ais_data_len)) 
-        uo = np.empty((self._ais_data_len))
+        tq =  self._gunn_data['tq']
+        po = np.zeros((2, self._ais_data_len))
+        zo = np.zeros((2, self._ais_data_len)) 
+        uo = np.zeros((self._ais_data_len))
 
         for idx, ais_item in enumerate(self._ais_data):
             po[0, idx] = ais_item["po_x"]
@@ -50,27 +50,15 @@ class CBF:
 
         return p ,u ,z ,tq, po, zo, uo
     
-    def _get_f(self, z, zo, u, uo):
-        p_dot = z*u 
-        return p_dot
-
-    def _get_g(self, z):  
-        return self._S @ z
-    
-    def _get_B1_dot(self, pe_unit, u, z): 
-        B1_dot = -pe_unit.T  @ z.reshape((2,1)) * u
+    def _get_B1_dot(self, pe_unit, u, z, uo, zo): 
+        B1_dot = -pe_unit.T  @ (z.reshape((2,1)) * u - uo * zo.reshape((2,1)))
         return  np.ravel(B1_dot)
     
-    def _get_B2_dot(self, pe_unit, pe_norm, z, B1, u, rdc): 
-        B2_dot  = np.empty((self._ais_data_len))
-        L_g_B2 =  np.empty([self._ais_data_len, 2]) 
-
-        for i in range(self._ais_data_len):   
-            _e = np.ravel(pe_unit[:,i])  
-            L_g_B2[i,:] = _e @ np.concatenate((z, u*self._S @ z), axis=1)
-            B2_dot[i] = (-(u**2/pe_norm[i])*(_e @ self._S.T @ z)**2 -
-            (u*self._sigma/(self._sigma**2 + B1[i]**2)) * _e @ z * u  - 
-            L_g_B2[i,:]@ np.array([[0], [rdc]]))
+    def _get_B2_dot(self, pe_unit, pe_norm, z, B1, u, rdc, uo, zo, pe): 
+        _e = np.ravel(pe_unit)  
+        L_g_B2 = -u*_e @ self._S @ z 
+        B2_dot = (((pe.T @ (z.reshape((2,1)) * u - uo * zo.reshape((2,1))))**2)/(pe_norm**3) + 
+        (np.linalg.norm((z.reshape((2,1)) * u - uo * zo.reshape((2,1))))**2)/pe_norm + L_g_B2 * rdc)
         return B2_dot, L_g_B2 
             
     def _get_nominal_control(self, z, tq): 
@@ -78,43 +66,47 @@ class CBF:
         rd = (-self._k1 * z_tilde[1]) / math.sqrt(1 - self._lam**2 * z_tilde[0]**2)
         return rd
 
-    def _get_safe_control(self, pe_unit, pe_norm, z, B1, u, rd_n): 
-        alpha_B1 = u*np.arctan(B1/self._sigma)
-        B1_dot = self._get_B1_dot(pe_unit, u, z)
-        B2 = B1_dot.T + alpha_B1
-        B2_dot, L_g_B2 = self._get_B2_dot(pe_unit, pe_norm, z, B1, u, rd_n)  
-        closest = np.argmin(pe_norm) 
-        if np.all(B2_dot <= self._gamma_2 * B2): 
+    def _get_safe_control(self, pe_unit, pe_norm, z, B1, u, rd_n, uo, zo, pe): 
+        alpha_B1 = B1*(1/self._sigma)
+        B1_dot = self._get_B1_dot(pe_unit, u, z, uo, zo)
+        B2 = B1_dot.T + alpha_B1 
+        B2_dot, L_g_B2 = self._get_B2_dot(pe_unit, pe_norm, z, B1, u, rd_n, uo, zo, pe) 
+        L_g_B2 = np.ravel(L_g_B2)
+        # print(np.all(B2_dot <= self._gamma_2 * B2), B2_dot, -self._gamma_2 * B2)
+        if B2_dot <= -(1/self._gamma_2) * B2: 
             return rd_n
         else:
-            a = B2_dot + self._gamma_2 * B2 
-            b = np.array([0, L_g_B2[closest,1]])
-            rds = rd_n - ((a[closest] * b.T) /(b @ b.T))  
-            return rds[0,1] 
+            a = B2_dot + (1/self._gamma_2) * B2 
+            b = L_g_B2
+            rds = rd_n - ((a * b.T) /(b @ b.T))   
+            return rds
 
     def _process_data(self, p ,u ,z ,tq, po, zo, uo):  
         self._running = True
         
         t = 0 
-        h_p = np.empty((2, self._hist_len)) 
+        h_p = np.zeros((2, self._hist_len)) 
 
-        po_dot = np.multiply(zo, uo) 
+        po_dot = np.multiply(zo, uo)  
         po_vec = po.T.reshape((-1,1)) + np.arange(self._hist_len) * po_dot.T.reshape((-1,1)) * self._dt 
         for t in range(self._hist_len): 
             if not self._running: return None 
             h_p[:,t] = p.T 
             # find safe input
             rd_n = self._get_nominal_control(z, tq)
-            pe = p - po_vec[:, t].reshape(2,-1, order='F')
+            pe = p - po_vec[:, t].reshape(2,-1, order='F') 
             pe_norm = np.linalg.norm(pe, axis=0) 
             pe_unit = pe / pe_norm 
-            B1 = self._safety_radius_m -pe_norm
-            rd = self._get_safe_control(pe_unit, pe_norm, z, B1, u, rd_n) 
-            p_dot = self._get_f(z, zo, u, uo) 
-            z_dot = self._get_g(z) 
+            closest = np.argmin(pe_norm)
+            zo_c = zo[:,closest]
+            uo_c = uo[closest] 
+            B1 = self._safety_radius_m -pe_norm[closest]
+            rd_s = self._get_safe_control(pe_unit[:,closest], pe_norm[closest], z, B1, u, rd_n, uo_c, zo_c, pe[:,closest].reshape((2,1)))   
+            p_dot = z * u 
+            z_dot = self._S @ z
             p = p + p_dot*self._dt  
-            z = z + z_dot*rd*self._dt 
-            z = z/np.linalg.norm(z)  
+            z = z + z_dot*rd_s*self._dt  
+            z = z/np.linalg.norm(z)   
         cbf_data =  {"p": h_p}
         return cbf_data
     
