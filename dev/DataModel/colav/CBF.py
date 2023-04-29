@@ -7,7 +7,7 @@ from time import time
 
 class CBF:
     def __init__(self, safety_radius_m ,k1 = 1, lam = 0.5, dt = 0.2, gamma_2 = 1,
-                sigma = 1.0, t_tot = 90, rd_max = 1, n_ub = 20, 
+                gamma_1 = 1.0, t_tot = 90, rd_max = 1, n_ub = 20, 
                 P=np.diagflat([0,1]), transform=SimulationTransform()): 
         self._safety_radius_m = safety_radius_m
         self._gunn_data = {}
@@ -18,7 +18,7 @@ class CBF:
         self._lam = lam
         self._dt = dt
         self._gamma_2 = gamma_2
-        self._sigma = sigma  
+        self._gamma_1 = gamma_1  
         self._t_tot = t_tot
         self._rd_max = rd_max
         self._n_ub = n_ub
@@ -49,37 +49,11 @@ class CBF:
             zo[:, idx] = ais_item["zo"].T 
 
         return p ,u ,z ,tq, po, zo, uo
-    
-    def _get_B1_dot(self, pe_unit, u, z, uo, zo): 
-        B1_dot = -pe_unit.T  @ (z.reshape((2,1)) * u - uo * zo.reshape((2,1)))
-        return  np.ravel(B1_dot)
-    
-    def _get_B2_dot(self, pe_unit, pe_norm, z, B1, u, rdc, uo, zo, pe): 
-        _e = np.ravel(pe_unit)  
-        L_g_B2 = -u*_e @ self._S @ z 
-        B2_dot = (((pe.T @ (z.reshape((2,1)) * u - uo * zo.reshape((2,1))))**2)/(pe_norm**3) + 
-        (np.linalg.norm((z.reshape((2,1)) * u - uo * zo.reshape((2,1))))**2)/pe_norm + L_g_B2 * rdc)
-        return B2_dot, L_g_B2 
             
     def _get_nominal_control(self, z, tq): 
         z_tilde = np.concatenate((tq, self._S @ tq), axis=1).T @ z
         rd = (-self._k1 * z_tilde[1]) / math.sqrt(1 - self._lam**2 * z_tilde[0]**2)
         return rd
-
-    def _get_safe_control(self, pe_unit, pe_norm, z, B1, u, rd_n, uo, zo, pe): 
-        alpha_B1 = B1*(1/self._sigma)
-        B1_dot = self._get_B1_dot(pe_unit, u, z, uo, zo)
-        B2 = B1_dot.T + alpha_B1 
-        B2_dot, L_g_B2 = self._get_B2_dot(pe_unit, pe_norm, z, B1, u, rd_n, uo, zo, pe) 
-        L_g_B2 = np.ravel(L_g_B2)
-        # print(np.all(B2_dot <= self._gamma_2 * B2), B2_dot, -self._gamma_2 * B2)
-        if B2_dot <= -(1/self._gamma_2) * B2: 
-            return rd_n
-        else:
-            a = B2_dot + (1/self._gamma_2) * B2 
-            b = L_g_B2
-            rds = rd_n - ((a * b.T) /(b @ b.T))   
-            return rds
 
     def _process_data(self, p ,u ,z ,tq, po, zo, uo):  
         self._running = True
@@ -92,20 +66,31 @@ class CBF:
         for t in range(self._hist_len): 
             if not self._running: return None 
             h_p[:,t] = p.T 
-            # find safe input
             rd_n = self._get_nominal_control(z, tq)
             pe = p - po_vec[:, t].reshape(2,-1, order='F') 
-            pe_norm = np.linalg.norm(pe, axis=0) 
-            pe_unit = pe / pe_norm 
+            pe_norm = np.linalg.norm(pe, axis=0)
             closest = np.argmin(pe_norm)
-            zo_c = zo[:,closest]
-            uo_c = uo[closest] 
-            B1 = self._safety_radius_m -pe_norm[closest]
-            rd_s = self._get_safe_control(pe_unit[:,closest], pe_norm[closest], z, B1, u, rd_n, uo_c, zo_c, pe[:,closest].reshape((2,1)))   
-            p_dot = z * u 
-            z_dot = self._S @ z
-            p = p + p_dot*self._dt  
-            z = z + z_dot*rd_s*self._dt  
+            ei = pe[:,closest].reshape((2,1))
+            norm_ei = pe_norm[closest]
+            zi = zo[:,closest].reshape((2,1))
+            ui = uo[closest]  
+            B1 = self._safety_radius_m - norm_ei 
+            LfB1 = -(ei.T @ (u*z - ui*zi)) / norm_ei 
+            B2 = LfB1 + (1/self._gamma_1)*B1 
+            LfB2 = ((ei.T@(u*z - ui*zi))**2)/norm_ei**3 - (np.linalg.norm((u*z - ui*zi), axis=0)**2)/norm_ei + (1/self._gamma_1)*LfB1 
+            LgB2 = (-u*ei.T@self._S@z)/norm_ei 
+            B2_dot = LfB2 + LgB2*rd_n 
+
+            if B2_dot <= -(1/self._gamma_2)*B2:
+                rd = rd_n
+            else:
+                a = LfB2 + LgB2*rd_n + (1/self._gamma_2)*B2
+                b = LgB2
+                rd = rd_n - (a@b.T)/b*b.T       
+            
+            p = p + u*z*self._dt
+            # po = po + zo*uo*self._dt
+            z = z + self._S@z*rd*self._dt
             z = z/np.linalg.norm(z)   
         cbf_data =  {"p": h_p}
         return cbf_data
