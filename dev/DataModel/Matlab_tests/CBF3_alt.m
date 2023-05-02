@@ -8,13 +8,14 @@ self.k1 = 1;
 self.lambda = 0.5;
 self.dq = 200;
 self.dt = 0.1;
-self.gamma_2 = 2.5;
-self.gamma_1 = 2.5;
+self.gamma_2 = 70;
+self.gamma_1 = .2;
 self.t = 1;
 self.t_t = 0;
 self.t_tot = 600;
 self.hist = zeros(20,1);
 self.arpa = [];
+self.max_rd = deg2rad(10);
 
 %% initialize
 rd = 0;
@@ -27,8 +28,8 @@ v = norm(u*z);
 tq = [sin(psi); cos(psi)];
 po = [-1505 -700; 10 100];
 self.n_po= size(po,2);
-uo = [1 10];
-psio = [deg2rad(90) deg2rad(180)];
+uo = [2 1];
+psio = [deg2rad(130) deg2rad(180)];
 zo = [sin(psio); cos(psio)];
 
 %% main loop
@@ -59,7 +60,13 @@ while self.t_t <= self.t_tot
     else
         a = LfB2 + LgB2*rdc + (1/self.gamma_2)*B2;
         b = LgB2;
-        rd = rdc - (a*b')/b*b';
+        rd = rdc - (a*b')/b*b'; 
+    end
+
+    if rd > self.max_rd
+            rd = self.max_rd;
+    elseif rd < -self.max_rd
+            rd = -self.max_rd;
     end
     
     p = p + u*z*self.dt;

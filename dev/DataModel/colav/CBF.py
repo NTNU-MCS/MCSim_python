@@ -6,9 +6,9 @@ from time import time
 
 
 class CBF:
-    def __init__(self, safety_radius_m ,k1 = 1, lam = 0.5, dt = 0.2, gamma_2 = 1,
-                gamma_1 = 1.0, t_tot = 90, rd_max = 1, n_ub = 20, 
-                P=np.diagflat([0,1]), transform=SimulationTransform()): 
+    def __init__(self, safety_radius_m ,k1 = 1, lam = 0.5, dt = 0.2, gamma_2 = 40,
+                gamma_1 = 0.2, t_tot = 90, rd_max = 1, n_ub = 20, max_rd = 0.18
+                , transform=SimulationTransform()): 
         self._safety_radius_m = safety_radius_m
         self._gunn_data = {}
         self._ais_data = {} 
@@ -18,13 +18,15 @@ class CBF:
         self._lam = lam
         self._dt = dt
         self._gamma_2 = gamma_2
-        self._gamma_1 = gamma_1  
+        self._gamma_1 = gamma_1 
+        self._epsilon = 0.000001 
         self._t_tot = t_tot
         self._rd_max = rd_max
         self._n_ub = n_ub
         self._hist_len = int(t_tot / dt) 
         self._running = False
-        self._P = P
+        self._max_rd = max_rd
+        
         self._transform = transform
         
     def update_cbf_data(self, arpa_gunn_data, arpa_data): 
@@ -57,6 +59,8 @@ class CBF:
 
     def _process_data(self, p ,u ,z ,tq, po, zo, uo):  
         self._running = True
+        start_time = time()
+        maneuver_start = None
         
         t = 0 
         h_p = np.zeros((2, self._hist_len)) 
@@ -86,13 +90,27 @@ class CBF:
             else:
                 a = LfB2 + LgB2*rd_n + (1/self._gamma_2)*B2
                 b = LgB2
-                rd = rd_n - (a@b.T)/b*b.T       
+                rd = rd_n - (a@b.T)/(b*b.T + self._epsilon)   
+                if maneuver_start is None:
+                    maneuver_start = t * self._dt
+
+            if rd > self._max_rd:
+                rd = self._max_rd
+            elif rd < -self._max_rd:
+                rd = -self._max_rd
             
-            p = p + u*z*self._dt
-            # po = po + zo*uo*self._dt
+            p = p + u*z*self._dt 
             z = z + self._S@z*rd*self._dt
             z = z/np.linalg.norm(z)   
-        cbf_data =  {"p": h_p}
+        if maneuver_start is not None:
+            start_maneuver_at = start_time + maneuver_start
+        else:
+            start_maneuver_at = -1
+        print('start_time', start_time, 'maneuver_start', maneuver_start, 'start_maneuver_at', start_maneuver_at)
+        cbf_data =  {
+            "p": h_p,
+            "maneuver_start" : start_maneuver_at
+                    }
         return cbf_data
     
     def convert_data(self, cbf_data):

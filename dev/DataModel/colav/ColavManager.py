@@ -93,14 +93,14 @@ class ColavManager:
         self._arpa.update_gunnerus_data(self._gunnerus_data)
         self._arpa.update_ais_data(self._ais_data)
         arpa_gunn_data, arpa_data = self._arpa.get_ARPA_parameters()  
-        if (arpa_data and arpa_gunn_data):
+        if (arpa_data and arpa_gunn_data): 
             converted_arpa_data = self._arpa.convert_arpa_params(arpa_data, arpa_gunn_data)
             self.websocket.send(self._compose_colav_msg(converted_arpa_data, self._arpa_message_id)) 
             self._cbf.update_cbf_data(arpa_gunn_data, arpa_data)
             cbf_data = self._cbf.get_cbf_data() 
             converted_cbf_data = self._cbf.convert_data(cbf_data)
             compose_cbf = self._compose_colav_msg(converted_cbf_data, self._cbf_message_id) 
-            self.websocket.send(compose_cbf)
+            self.websocket.send(compose_cbf) 
         end = time.time()
         print("end update Arpa + CBF", end-start)
 
