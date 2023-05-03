@@ -7,7 +7,7 @@ from time import time
 
 class CBF:
     def __init__(self, safety_radius_m ,k1 = 1, lam = 0.5, dt = 0.2, gamma_2 = 40,
-                gamma_1 = 0.2, t_tot = 90, rd_max = 1, n_ub = 20, max_rd = 0.18
+                gamma_1 = 0.2, t_tot = 600, rd_max = 1, n_ub = 20, max_rd = 0.18
                 , transform=SimulationTransform()): 
         self._safety_radius_m = safety_radius_m
         self._gunn_data = {}
