@@ -105,8 +105,7 @@ class CBF:
         if maneuver_start is not None:
             start_maneuver_at = start_time + maneuver_start
         else:
-            start_maneuver_at = -1
-        print('start_time', start_time, 'maneuver_start', maneuver_start, 'start_maneuver_at', start_maneuver_at)
+            start_maneuver_at = -1 
         cbf_data =  {
             "p": h_p,
             "maneuver_start" : start_maneuver_at
@@ -124,6 +123,7 @@ class CBF:
             lat, lon = self._transform.xyz_to_coords(x, y, lat_o, lon_o)
             geo.append([lon, lat])
         converted_data['cbf'] = geo 
+        converted_data['maneuver_start'] = cbf_data['maneuver_start']
         return converted_data
 
     def get_cbf_data(self): 

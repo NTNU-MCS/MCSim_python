@@ -154,8 +154,10 @@ class SimulationServer:
                         else : 
                             self.ais_history[message_id]["filtered_course"] = course
 
-                    if(len(self.ais_history[message_id]["pos_history"]) > self.ais_history_len):
-                        self.ais_history[message_id]["pos_history"].pop(0)
+                    if(len(self.ais_history[message_id]["lon_history"]) > self.ais_history_len):
+                        self.ais_history[message_id]["lon_history"].pop(0)
+                    if(len(self.ais_history[message_id]["lat_history"]) > self.ais_history_len):
+                        self.ais_history[message_id]["lat_history"].pop(0)
 
                     if(has_course and (len(self.ais_history[message_id]["course_history"]) > self.ais_history_len)):
                         self.ais_history[message_id]["course_history"].pop(0)
