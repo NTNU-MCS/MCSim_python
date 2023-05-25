@@ -1,9 +1,10 @@
 from threading import Thread
 from parsers.StreamParser import StreamParser
 from parsers.LogParser import LogParser
+from loggers.FastLogger import FastLogger
 from loggers.DataLogger import DataLogger  
-from loggers.SimulationLogger import SimulationLogger
 from simulation.SimulationServer import SimulationServer
+from simulation.SimulationServerReplay import SimulationServerReplay
 from simulation.SimulationTransform import SimulationTransform
 from colav.ColavManager import ColavManager
 import pathlib
@@ -15,7 +16,7 @@ import socket
 import easygui
 
 class DataModel:
-    def __init__(self):
+    def __init__(self, log_file=None):
         #Todo: add flush() functionality across related classes to purge data 
         #and prevent stack overflow / slowdown over extended use 
         self.gunnerus_mmsi = '258342000'
@@ -25,7 +26,7 @@ class DataModel:
         self.address = ("fagitrelay.it.ntnu.no", 25508)
         self.buffer_size = 4096
         self.loop_limit = 1
-
+        self.log_file = log_file
         #raw_verbose, tag_verbose, unparsed_tag_verbose,
         #parsed_message_verbose, parse_error_verbose
         self.verbosity = (False, False, False, False, False)
@@ -41,15 +42,23 @@ class DataModel:
         self.UDP_Decrypter = Decrypter(key_path = self.key_path)
 
         # if True a log can be selected and used as the data source
-        self.parse_saved_log = False
+        self.parse_saved_log = True 
         self.drop_ais_message = False
+
+        # automatically true if using a log file as an arg
+        if self.log_file is not None:
+            self.parse_saved_log = True 
+            self.load_path = self.log_file
+        
         
         # filter for messages
         self.prefixFilter = ['$PSIMSNS', '!AI', '$GPGGA', '$GPRMC']
         self.suffixFilter = '_ext'
 
         if self.parse_saved_log:
-            self.load_path = easygui.fileopenbox()
+            if self.log_file is None:
+                self.load_path = easygui.fileopenbox()
+
             self.UDP_Stream = LogParser(
                 path = self.load_path,
                 verbosity=self.verbosity, 
@@ -95,10 +104,10 @@ class DataModel:
         self.overwrite_headers = True
         self.dl_verbose = (False, False)
 
-        self.feedSimulation = True
+        self.saveIncomingData = False
 
-        if (self.feedSimulation):
-            self.UDP_DataLogger = SimulationLogger(
+        if (not self.saveIncomingData):
+            self.UDP_DataLogger = FastLogger(
                 stream_parser=self.UDP_Stream,
                 save_headers=self.save_headers,
                 df_aliases=self.df_aliases,
@@ -128,7 +137,7 @@ class DataModel:
             'lon': 1024.5377,
             'lon_dir': 'N',
             'true_course':-90,
-            'spd_over_grnd': 0.10,
+            'spd_over_grnd': 10,
             }
         self.dummy_vessel = {
             'lon': 10.411033, 
@@ -153,16 +162,29 @@ class DataModel:
             max_d_2_cpa=2000 
             )
 
-        self.UDP_SimulationServer = SimulationServer(
-            address=self.local_address, 
-            buffer_size=self.sc_buffer_sz,
-            data_logger=self.UDP_DataLogger,
-            websocket=self.websocket,
-            transform=self.UDP_Sim_Frame_transform,
-            distance_filter=self.distance_filter,
-            predicted_interval=60,
-            colav_manager=self.Colav_Manager
-            )  
+        if (self.parse_saved_log):
+            self.UDP_SimulationServer = SimulationServerReplay(
+                address=self.local_address, 
+                buffer_size=self.sc_buffer_sz,
+                logParser=self.UDP_Stream,
+                data_logger=self.UDP_DataLogger,
+                websocket=self.websocket,
+                transform=self.UDP_Sim_Frame_transform,
+                distance_filter=self.distance_filter,
+                predicted_interval=60,
+                colav_manager=self.Colav_Manager
+                )  
+        else:
+            self.UDP_SimulationServer = SimulationServer(
+                address=self.local_address, 
+                buffer_size=self.sc_buffer_sz,
+                data_logger=self.UDP_DataLogger,
+                websocket=self.websocket,
+                transform=self.UDP_Sim_Frame_transform,
+                distance_filter=self.distance_filter,
+                predicted_interval=60,
+                colav_manager=self.Colav_Manager
+                )
         
         # Create new threads
         self.thread_udp_stream = Thread(target=self.UDP_Stream.start) 

@@ -13,6 +13,7 @@ class LogParser(Parser):
                 prefixFilter = [], suffixFilter=''
                 ):
         
+        self.parse_complete = False
         self.prefixFilter = prefixFilter
         self.suffixFilter = suffixFilter
         self.extended_msg_suffix  = '_ext'
@@ -61,12 +62,12 @@ class LogParser(Parser):
         print("StreamParser running.")
         self._running = True
         file = open(self.path , 'r')
-        lines = file.readlines()
-        while self._running:
-            for line in tqdm(lines):
-                if not self._running: return
-                raw_msg = line.encode(encoding='ascii')
-                if self._raw_verbose: print(raw_msg)
-                self._parse_message(raw_msg)  
+        lines = file.readlines()  
+        for line in tqdm(lines):
+            if not self._running: return
+            raw_msg = line.encode(encoding='ascii')
+            if self._raw_verbose: print(raw_msg)
+            self._parse_message(raw_msg)  
+        self.parse_complete = True
 
         print("StreamParser Stopped.")           

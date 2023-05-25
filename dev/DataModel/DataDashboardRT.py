@@ -1,7 +1,16 @@
 
 from DataModel import DataModel
 from time import sleep 
-GunnerusData = DataModel()
+import argparse 
+
+parser = argparse.ArgumentParser(description='File opening script')
+parser.add_argument('-f', '--file', help='Path to the log file to open')
+args = parser.parse_args()
+
+if args.file:
+        GunnerusData = DataModel(args.file)
+else:
+        GunnerusData = DataModel()  
 
 try:
     GunnerusData.start()

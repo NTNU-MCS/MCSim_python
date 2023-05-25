@@ -2,15 +2,16 @@ import pandas as pd
 from loggers.Logger import Logger 
 from parsers.Parser import Parser
 
-class SimulationLogger(Logger):
-    def __init__(self, save_headers, df_aliases, stream_parser = Parser ,overwrite_headers=False, verbose=False):
+class FastLogger(Logger):
+    def __init__(self, save_headers, df_aliases, stream_parser = Parser,
+                overwrite_headers=False, verbose=False):
         
         #attribute aliases for incoming messages
         self.df_aliases = df_aliases
 
         # define name for unknown atribute
         self.def_unk_atr_name = 'unknown_'
-
+        self.bufferBusy = False
         self._stream_parser = stream_parser
         self.sorted_data = []
         self._running = False
@@ -56,9 +57,11 @@ class SimulationLogger(Logger):
 
     def _log_buffered_message(self):
         if len(self._buffer_data) < 1: 
+            self.bufferBusy = False
             if self._buffer_verbose:  print('Buffer Empty')
             return  
-
+        
+        self.bufferBusy = True
         _message = self._buffer_data[-1][1] 
         msg_id = self._buffer_data[-1][0] 
 

@@ -227,7 +227,7 @@ class ARPA:
         self._running = True 
         processed_data = []
         gunn_data = self._get_gunnerus_data() 
-        if gunn_data is None: return None
+        if gunn_data is None: return None, None
 
         ais_data = copy.deepcopy(self._ais_data)   
         ais_msg_ids = ais_data.keys() 
@@ -311,7 +311,7 @@ class ARPA:
             converted_data[arpa_msg['mmsi']] = arpa_out
         return converted_data 
         
-    def get_ARPA_parameters(self):
+    def get_ARPA_parameters(self): 
         gunn_data, processed_data = self._process_data() 
         return gunn_data, processed_data
         

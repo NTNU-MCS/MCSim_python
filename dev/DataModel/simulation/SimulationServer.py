@@ -3,16 +3,18 @@ import numpy as np
 from scipy.signal import butter, filtfilt
 import json
 from simulation.SimulationTransform import SimulationTransform
+from loggers.FastLogger import FastLogger 
 from utils.DashboardWebsocket import DashboardWebsocket
 from colav.ColavManager import ColavManager
 import math
 
 class SimulationServer:
-    def __init__(self, buffer_size, data_logger, address= None,
+    def __init__(self, buffer_size, data_logger = FastLogger, address= None,
                 websocket = DashboardWebsocket, transform=SimulationTransform(), 
                 distance_filter=None, predicted_interval = 30 ,colav_manager = ColavManager,
                 filt_order = 3, filt_cutfreq = 0.1, filt_nyqfreq = 0.5):
         
+        self._data_logger = data_logger
         self._buffer = data_logger.sorted_data
         self._running = False 
         self.address = address
@@ -33,6 +35,9 @@ class SimulationServer:
             self._port = address[1]
             self.buffer_size = buffer_size
             self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    
+    def clear_ais_history(self):
+        self.ais_history.clear()
 
     def _has_data(self, msg):
         msg_keys = msg.keys() 
@@ -188,7 +193,7 @@ class SimulationServer:
         eastings = self.transform.deg_2_dec(float(msg["lon"]), msg["lon_dir"])
         altitude = msg["altitude"] 
         x,y,z = self.transform.get_xyz(northings, eastings, altitude)
-        return(json.dumps({"message_id":"coords","x":x, "y":y, "z":z}, default=str))
+        return({"message_id":"coords","x":x, "y":y, "z":z})
     
     def _compose_ais_msg(self, msg): 
             northings = float(msg["lat"])
@@ -201,7 +206,7 @@ class SimulationServer:
                 heading = msg["heading"]
 
             x,y,z = self.transform.get_xyz(northings, eastings, altitude)
-            return(json.dumps({"message_id": "ais","x":x, "y":y, "mmsi":mmsi, "heading": heading}, default=str)) 
+            return({"message_id": "ais","x":x, "y":y, "mmsi":mmsi, "heading": heading}) 
 
     def _set_gunnerus_coords(self, msg): 
         self.gunnerus_lon = self.transform.deg_2_dec(float(msg["lon"]), msg["lon_dir"])
@@ -212,7 +217,7 @@ class SimulationServer:
             json_msg = self._compose_msg(message)
 
             if self.websocket.enable: 
-                self.websocket.send(json_msg)
+                self.websocket.send(json_msg) 
 
             valid_ais_msg = (
                 message["message_id"].find("!AI") == 0 and
@@ -226,24 +231,26 @@ class SimulationServer:
                     self._colav_manager.update_ais_data(message)
 
                     if self._validate_coords(message, self._unity_filter):
-                        msg = self._compose_ais_msg(message)
-                        msg = msg.encode("ascii")
-                        self.server.sendto(msg, (self._ip, self._port))
+                        msg = self._compose_ais_msg(message)  
+                        json_msg = json.dumps({
+                                            "type": "datain",
+                                            "content": msg
+                                            },default=str)
+                        self.websocket.send(json_msg) 
 
                 if message["message_id"]=="$GPGGA_ext":
                     self._set_gunnerus_coords(message)
                     msg = self._compose_transformed_msg(message)
-                    msg = msg.encode("ascii")
-                    self.server.sendto(msg, (self._ip, self._port))
+                    json_msg = json.dumps({
+                                            "type": "datain",
+                                            "content": msg
+                                            },default=str)
+                    self.websocket.send(json_msg) 
 
                 if message["message_id"]=="$GPRMC_ext": 
                     self._colav_manager.update_gunnerus_data(message)
                     pass
 
-                if message["message_id"]=="$PSIMSNS_ext":
-                    msg = json.dumps(message, default=str)
-                    msg = msg.encode("ascii")
-                    self.server.sendto(msg, (self._ip, self._port))
                 
     def pop_buffer(self, index = None):
         if len(self._buffer) < 1: return
