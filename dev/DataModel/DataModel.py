@@ -140,14 +140,14 @@ class DataModel:
             'spd_over_grnd': 10,
             }
         self.dummy_vessel = {
-            'lon': 10.411033, 
-            'lat': 63.458227, 
+            'lon': 10.482652, 
+            'lat': 63.473148, 
             'course': 135,
             'heading': 90,
-            'speed': 0.1,
+            'speed': 0,
             'mmsi': 3143757,
             'message_id': "!AI_ext_dummy",
-            'pos_history': [[10.411033, 63.458227]],
+            'pos_history': [[10.482652, 63.473148]],
             }
         
         self.Colav_Manager = ColavManager(
@@ -156,7 +156,7 @@ class DataModel:
             websocket=self.websocket,
             gunnerus_mmsi = self.gunnerus_mmsi,
             dummy_gunnerus= None,
-            dummy_vessel= None,
+            dummy_vessel= self.dummy_vessel,
             safety_radius_m=200,
             safety_radius_tol=1.5,
             max_d_2_cpa=2000 
