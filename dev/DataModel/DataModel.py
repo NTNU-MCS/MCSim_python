@@ -42,7 +42,7 @@ class DataModel:
         self.UDP_Decrypter = Decrypter(key_path = self.key_path)
 
         # if True a log can be selected and used as the data source
-        self.parse_saved_log = True 
+        self.parse_saved_log = False 
         self.drop_ais_message = False
 
         # automatically true if using a log file as an arg
@@ -132,18 +132,18 @@ class DataModel:
         self.ws_address= "ws://127.0.0.1:8000"
         self.websocket = DashboardWebsocket(self.ws_address, self.ws_enable)
         self.dummy_gunnerus = {
-            'lat': 6326.3042,
+            'lat': 6326.3043,
             'lat_dir': 'E',
-            'lon': 1024.5377,
+            'lon': 1024.5395,
             'lon_dir': 'N',
-            'true_course':-90,
+            'true_course': 10,
             'spd_over_grnd': 10,
             }
         self.dummy_vessel = {
-            'lon': 10.482652, 
-            'lat': 63.473148, 
+            'lon': 10.411565, 
+            'lat': 63.44141, 
             'course': 135,
-            'heading': 90,
+            'heading': 190,
             'speed': 0,
             'mmsi': 3143757,
             'message_id': "!AI_ext_dummy",
@@ -155,7 +155,7 @@ class DataModel:
             update_interval=10,
             websocket=self.websocket,
             gunnerus_mmsi = self.gunnerus_mmsi,
-            dummy_gunnerus= None,
+            dummy_gunnerus= self.dummy_gunnerus,
             dummy_vessel= self.dummy_vessel,
             safety_radius_m=200,
             safety_radius_tol=1.5,
