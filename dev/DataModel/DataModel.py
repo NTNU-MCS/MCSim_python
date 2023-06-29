@@ -5,6 +5,7 @@ from loggers.FastLogger import FastLogger
 from loggers.DataLogger import DataLogger  
 from simulation.SimulationServer import SimulationServer
 from simulation.SimulationServerReplay import SimulationServerReplay
+from simulation.Simulation4DOF import Simulation4DOF
 from simulation.SimulationTransform import SimulationTransform
 from colav.ColavManager import ColavManager
 import pathlib
@@ -49,7 +50,6 @@ class DataModel:
         if self.log_file is not None:
             self.parse_saved_log = True 
             self.load_path = self.log_file
-        
         
         # filter for messages
         self.prefixFilter = ['$PSIMSNS', '!AI', '$GPGGA', '$GPRMC']
@@ -136,9 +136,12 @@ class DataModel:
             'lat_dir': 'E',
             'lon': 1024.5395,
             'lon_dir': 'N',
-            'true_course': 10,
-            'spd_over_grnd': 10,
+            'true_course': 40,
+            'spd_over_grnd': 0,
+            'revs': 100,
+            'azi_d': 10,
             }
+        
         self.dummy_vessel = {
             'lon': 10.411565, 
             'lat': 63.44141, 
@@ -161,8 +164,10 @@ class DataModel:
             safety_radius_tol=1.5,
             max_d_2_cpa=2000 
             )
+        
+        self.run4DOFSim = True
 
-        if (self.parse_saved_log):
+        if (self.parse_saved_log): 
             self.UDP_SimulationServer = SimulationServerReplay(
                 address=self.local_address, 
                 buffer_size=self.sc_buffer_sz,
@@ -174,7 +179,20 @@ class DataModel:
                 predicted_interval=60,
                 colav_manager=self.Colav_Manager
                 )  
-        else:
+        elif (self.run4DOFSim): 
+            self.UDP_SimulationServer = Simulation4DOF(
+                buffer_size=self.sc_buffer_sz,
+                address=self.local_address, 
+                websocket =self.websocket,
+                data_logger=self.UDP_DataLogger,
+                transform=self.UDP_Sim_Frame_transform, 
+                distance_filter=self.distance_filter, 
+                colav_manager=self.Colav_Manager, 
+                tmax = 1, 
+                dt=0.2, 
+                rvg_init=self.dummy_gunnerus
+                )
+        else:  
             self.UDP_SimulationServer = SimulationServer(
                 address=self.local_address, 
                 buffer_size=self.sc_buffer_sz,

@@ -23,6 +23,22 @@ class SimulationTransform:
         deg = math.trunc(coord/100)
         dec = (coord/100 - deg)*(10/6)
         return dir*(deg + dec)
+    
+    def dec_2_deg(self, coord, direction='lon'):
+        dir = ''
+        deg = 0
+        
+        if (direction == 'lon'):
+            if (coord < 0): dir = 'W'
+            else: dir = 'E'
+        else:
+            if (coord < 0): dir = 'S'
+            else: dir = 'N'
+
+        deg = int(coord) 
+        deg = deg*100 + (coord - deg)*60
+        return deg, dir
+
 
     def get_frame_dec(self):
         transformed_heading = self.attitude_data[['unix_time', 'head_deg', 'roll_deg', 'pitch_deg']]

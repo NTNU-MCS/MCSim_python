@@ -20,11 +20,10 @@ class SimulationServerReplay(SimulationServer):
                 websocket, transform, distance_filter, predicted_interval ,colav_manager,
                 filt_order, filt_cutfreq, filt_nyqfreq)
         self.logParser = logParser
-
         
     def start(self):
         self._running = True 
-        print("Simulation Client running...")
+        print("Simulation Replay Client running...")
         sortedList = None 
         index = 0
         time_of_first_message = 0
