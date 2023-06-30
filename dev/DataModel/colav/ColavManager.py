@@ -14,7 +14,7 @@ class ColavManager:
                 safety_radius_m = 200, safety_radius_tol = 1.5, 
                 max_d_2_cpa = 2000, gunnerus_mmsi ='' ,
                 websocket=DashboardWebsocket,  dummy_gunnerus = None,
-                dummy_vessel = None):
+                dummy_vessel = None, print_comp_t = False):
         
         self._cbf_message_id = 'cbf'
         self._arpa_message_id = 'arpa'
@@ -35,6 +35,7 @@ class ColavManager:
         self._max_d_2_cpa = max_d_2_cpa
         self.dummy_gunnerus = dummy_gunnerus
         self.dummy_vessel = dummy_vessel
+        self._print_c_time = print_comp_t
 
         self._arpa = ARPA(
             safety_radius_m= self._safety_radius_m,
@@ -102,7 +103,9 @@ class ColavManager:
             compose_cbf = self._compose_colav_msg(converted_cbf_data, self._cbf_message_id) 
             self.websocket.send(compose_cbf) 
         end = time.time()
-        print("end update Arpa + CBF", end-start)
+        
+        if self._print_c_time:
+            print("end update Arpa + CBF", end-start)
 
     def start(self):
         if self.enable: 

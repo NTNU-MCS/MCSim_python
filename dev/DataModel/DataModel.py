@@ -158,8 +158,8 @@ class DataModel:
             update_interval=10,
             websocket=self.websocket,
             gunnerus_mmsi = self.gunnerus_mmsi,
-            dummy_gunnerus= self.dummy_gunnerus,
-            dummy_vessel= self.dummy_vessel,
+            dummy_gunnerus= None,
+            dummy_vessel= None,
             safety_radius_m=200,
             safety_radius_tol=1.5,
             max_d_2_cpa=2000 

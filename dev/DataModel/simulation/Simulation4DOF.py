@@ -94,7 +94,7 @@ class Simulation4DOF(SimulationServer):
         lat_ddm, lat_dir = self.transform.dec_2_deg(lat, direction='lat')
         lon_ddm, lon_dir = self.transform.dec_2_deg(lon, direction='lon')
         dtime = datetime.fromtimestamp(timestamp)
-
+        speed = self.transform.mps_to_kn(speed)
         msg = {
         'timestamp': dtime.time(),
         'status': 'A',
@@ -153,7 +153,7 @@ class Simulation4DOF(SimulationServer):
                 psi = psi * (180 / math.pi)
                 lat, lon = self.transform.xyz_to_coords(e, n, self.o_lat, self.o_lon)
                 speed = math.sqrt(surge**2 + sway**2)
-                course = psi + math.atan2(surge, sway) * (180/math.pi)
+                course = psi + math.atan2(sway, surge) * (180/math.pi) 
                 out.append(self.spoof_psimsns(timestamp, roll, psi))
                 out.append(self.spoof_gpgga_msg(timestamp, lon, lat))
                 out.append(self.spoof_gprmc(timestamp, lon, lat, speed, course))

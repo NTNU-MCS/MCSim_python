@@ -109,6 +109,10 @@ class SimulationTransform:
     def m_to_nm(self, m):
         nm = m / self.m_in_nm
         return nm
+
+    def mps_to_kn(self, mps):
+        kn = mps * 1.94384449
+        return kn
     
     def kn_to_mps(self, knot):
         return knot * self.mps_in_kn
