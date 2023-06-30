@@ -205,12 +205,15 @@ class DataModel:
                 )
         
         # Create new threads
+        self.thread_websocket_receive = Thread(target=self.websocket.start) 
         self.thread_udp_stream = Thread(target=self.UDP_Stream.start) 
         self.thread_log_data = Thread(target=self.UDP_DataLogger.start)
         self.thread_sim_server = Thread(target=self.UDP_SimulationServer.start) 
         self.thread_colav_manager = Thread(target=self.Colav_Manager.start)
 
     def start(self):
+        if self.ws_enable:
+            self.thread_websocket_receive.start()
         self.thread_udp_stream.start()
         self.thread_log_data.start()
         self.thread_sim_server.start()

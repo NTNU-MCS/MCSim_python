@@ -187,12 +187,18 @@ class Simulation4DOF(SimulationServer):
         self.nu = x[4:8]  
         return out, timestamps
 
+    def check_incoming_controls(self):
+        if 'control_azi' in self.websocket.received_data:
+            self.azi = self.websocket.received_data['control_azi']
+        if 'control_thrust' in self.websocket.received_data:
+            self.revs = self.websocket.received_data['control_thrust']
+
     def start(self):
         self._running = True 
         print("Simulation 4DOF Client running...") 
         
         while self._running:
-
+            self.check_incoming_controls()
             if len(self._buffer): #check if rt data should be sent
                 for filter in self._send_msg_filter:
                     if self._buffer[0]["message_id"].find(filter) == 0:
