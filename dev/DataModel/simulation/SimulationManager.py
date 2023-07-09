@@ -2,6 +2,7 @@ from simulation.SimulationServer import SimulationServer
 from simulation.SimulationServerReplay import SimulationServerReplay
 from simulation.Simulation4DOF import Simulation4DOF
 from simulation.SimulationTransform import SimulationTransform
+from threading import Thread
 
 class SimulationManager():
     def __init__(self, local_address, sc_buffer_sz, UDP_Stream, UDP_DataLogger,
@@ -26,13 +27,54 @@ class SimulationManager():
         self.mode_rt = 'rt'
         self.mode = mode
         self.SimulationServer = SimulationServer
+        self.running = False
+        self.thread_sim_server = Thread(target=self.SimulationServer.start) 
 
-    def start(self):
-        self.SimulationServer.start()
+    def _has_prop(self, msg, prop = ""):
+        msg_keys = msg.keys() 
+        has_data = (prop in msg_keys)
+        return has_data
+    
+    def _format_init(self, msg):
+        revs = self.rvg_init['revs']
+        azi = self.rvg_init['azi_d']
+        msg = self.SimulationServer.rvg_state 
+        msg['lat'] = float(msg['lat'])
+        msg['lon'] = float(msg['lon'])
+        msg['true_course'] = float(msg['true_course'])
+        msg['spd_over_grnd'] = float(msg['spd_over_grnd'])
+        msg['azi_d'] = azi
+        msg['revs'] = revs
+        return msg
+
+    def start_sim(self):
+        self.thread_sim_server.start()
+
+    def stop_sim(self):
+        self.SimulationServer.stop()
 
     def stop(self):
-        self.SimulationServer.stop()
-    
+        self.running = False
+        self.stop_sim()
+
+    def start(self):
+        self.thread_sim_server = Thread(target=self.SimulationServer.start) 
+        self.start_sim()
+        self.running = True
+        while(self.running):
+            has_new_msg =  self._has_prop(self.websocket.received_data, 'data_mode') 
+            if has_new_msg and self.websocket.received_data['data_mode'] != self.mode:
+                mode = self.websocket.received_data['data_mode']
+                if (mode == self.mode_4dof and self.mode == self.mode_rt):
+                    self.rvg_init = self._format_init(self.SimulationServer.rvg_state)  
+                
+                print('switching')
+                self.mode = self.websocket.received_data['data_mode']
+                self.stop_sim()
+                self.set_simulation_type(self.mode)
+                self.thread_sim_server = Thread(target=self.SimulationServer.start) 
+                self.start_sim() 
+
     def set_simulation_type(self, mode):
         if (mode == self.mode_replay): 
                 self.SimulationServer = SimulationServerReplay(

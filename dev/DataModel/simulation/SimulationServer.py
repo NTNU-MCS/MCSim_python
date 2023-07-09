@@ -29,6 +29,7 @@ class SimulationServer:
         self._colav_manager = colav_manager
         self._predicted_interval = predicted_interval 
         self._butter_b, self._butter_a = butter(filt_order, filt_cutfreq/filt_nyqfreq, btype='low')
+        self.rvg_state = {}
 
         if address is not None:
             self._ip = address[0]
@@ -249,6 +250,7 @@ class SimulationServer:
 
                 if message["message_id"]=="$GPRMC_ext": 
                     self._colav_manager.update_gunnerus_data(message)
+                    self.rvg_state = message 
                     pass
 
                 

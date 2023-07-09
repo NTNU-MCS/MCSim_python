@@ -8,6 +8,7 @@ from simulation.SimulationServerReplay import SimulationServerReplay
 from simulation.Simulation4DOF import Simulation4DOF
 from simulation.SimulationTransform import SimulationTransform
 from colav.ColavManager import ColavManager
+from simulation.SimulationManager import SimulationManager
 import pathlib
 from utils.DashboardWebsocket import DashboardWebsocket
 from datetime import datetime
@@ -167,48 +168,34 @@ class DataModel:
         
         self.run4DOFSim = True
 
+        self.SimulationManager = SimulationManager(
+            local_address= self.local_address,
+            sc_buffer_sz = self.sc_buffer_sz,
+            UDP_Stream = self.UDP_Stream,
+            UDP_DataLogger = self.UDP_DataLogger,
+            websocket = self.websocket,
+            UDP_Sim_Frame_transform = self.UDP_Sim_Frame_transform,
+            distance_filter = self.distance_filter,
+            Colav_Manager = self.Colav_Manager,
+            rvg_init = self.dummy_gunnerus, 
+            tmax = 1, 
+            dt = 0.2,
+            predicted_interval = 60, 
+            mode = '4dof'
+            )
+
         if (self.parse_saved_log): 
-            self.UDP_SimulationServer = SimulationServerReplay(
-                address=self.local_address, 
-                buffer_size=self.sc_buffer_sz,
-                logParser=self.UDP_Stream,
-                data_logger=self.UDP_DataLogger,
-                websocket=self.websocket,
-                transform=self.UDP_Sim_Frame_transform,
-                distance_filter=self.distance_filter,
-                predicted_interval=60,
-                colav_manager=self.Colav_Manager
-                )  
+            self.SimulationManager.set_simulation_type(self.SimulationManager.mode_replay)            
         elif (self.run4DOFSim): 
-            self.UDP_SimulationServer = Simulation4DOF(
-                buffer_size=self.sc_buffer_sz,
-                address=self.local_address, 
-                websocket =self.websocket,
-                data_logger=self.UDP_DataLogger,
-                transform=self.UDP_Sim_Frame_transform, 
-                distance_filter=self.distance_filter, 
-                colav_manager=self.Colav_Manager, 
-                tmax = 1, 
-                dt=0.2, 
-                rvg_init=self.dummy_gunnerus
-                )
+            self.SimulationManager.set_simulation_type(self.SimulationManager.mode_4dof)
         else:  
-            self.UDP_SimulationServer = SimulationServer(
-                address=self.local_address, 
-                buffer_size=self.sc_buffer_sz,
-                data_logger=self.UDP_DataLogger,
-                websocket=self.websocket,
-                transform=self.UDP_Sim_Frame_transform,
-                distance_filter=self.distance_filter,
-                predicted_interval=60,
-                colav_manager=self.Colav_Manager
-                )
+            self.SimulationManager.set_simulation_type(self.SimulationManager.mode_rt)
         
         # Create new threads
         self.thread_websocket_receive = Thread(target=self.websocket.start) 
         self.thread_udp_stream = Thread(target=self.UDP_Stream.start) 
         self.thread_log_data = Thread(target=self.UDP_DataLogger.start)
-        self.thread_sim_server = Thread(target=self.UDP_SimulationServer.start) 
+        self.thread_sim_manager = Thread(target=self.SimulationManager.start) 
         self.thread_colav_manager = Thread(target=self.Colav_Manager.start)
 
     def start(self):
@@ -216,13 +203,13 @@ class DataModel:
             self.thread_websocket_receive.start()
         self.thread_udp_stream.start()
         self.thread_log_data.start()
-        self.thread_sim_server.start()
+        self.thread_sim_manager.start()
         self.thread_colav_manager.start() 
 
     def stop(self): 
         self.UDP_Stream.stop()
         self.UDP_DataLogger.stop() 
-        self.UDP_SimulationServer.stop()
+        self.SimulationManager.stop()
         self.Colav_Manager.stop()
         self.websocket.close()
         print('Exiting...') 

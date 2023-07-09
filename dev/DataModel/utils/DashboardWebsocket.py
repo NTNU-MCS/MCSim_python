@@ -3,7 +3,7 @@ import json
 
 class DashboardWebsocket:
     def __init__(self, address, enable=True, 
-                receive_filters = ['control_azi', 'control_thrust']):
+                receive_filters = ['control_azi', 'control_thrust', 'data_mode']):
         
         self.address = address
         self.enable = enable
@@ -34,7 +34,7 @@ class DashboardWebsocket:
                 for filter in self._receive_filters:
                     if msg_id == filter:
                         val = msg['data']['val']
-                        self.received_data[msg_id] = val
+                        self.received_data[msg_id] = val 
 
     def close(self):
         self.running = False
