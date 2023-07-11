@@ -26,7 +26,8 @@ class DashboardWebsocket:
         self.running = True
 
         while self.running:
-            msg = json.loads(self.ws.recv())
+            raw = self.ws.recv()
+            msg = json.loads(raw)
 
             if msg['type'] == 'datain': 
                 msg_id = msg['data']['message_id']

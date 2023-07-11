@@ -163,7 +163,9 @@ class DataModel:
             dummy_vessel= None,
             safety_radius_m=200,
             safety_radius_tol=1.5,
-            max_d_2_cpa=2000 
+            max_d_2_cpa=2000,
+            print_comp_t=True,
+            prediction_t=300
             )
         
         self.run4DOFSim = True

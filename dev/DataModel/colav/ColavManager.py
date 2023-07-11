@@ -2,6 +2,7 @@ from utils.DashboardWebsocket import DashboardWebsocket
 from simulation.SimulationTransform import SimulationTransform
 from colav.ARPA import ARPA
 from colav.CBF import CBF
+from colav.CBF_4DOF import CBF_4DOF
 import json
 import math
 import copy
@@ -14,8 +15,11 @@ class ColavManager:
                 safety_radius_m = 200, safety_radius_tol = 1.5, 
                 max_d_2_cpa = 2000, gunnerus_mmsi ='' ,
                 websocket=DashboardWebsocket,  dummy_gunnerus = None,
-                dummy_vessel = None, print_comp_t = False):
-        
+                dummy_vessel = None, print_comp_t = False, cbf_type = '4dof',
+                prediction_t = 600):
+        self.uni_cbf = 'uni'
+        self.dof4_cbf = '4dof'
+        self._cbf_type = cbf_type
         self._cbf_message_id = 'cbf'
         self._arpa_message_id = 'arpa'
         self._gunnerus_data = {}
@@ -36,6 +40,7 @@ class ColavManager:
         self.dummy_gunnerus = dummy_gunnerus
         self.dummy_vessel = dummy_vessel
         self._print_c_time = print_comp_t
+        self.prediction_t = prediction_t
 
         self._arpa = ARPA(
             safety_radius_m= self._safety_radius_m,
@@ -44,9 +49,20 @@ class ColavManager:
             transform= self._transform,
             gunnerus_mmsi=self.gunnerus_mmsi) 
         
-        self._cbf = CBF(
-            safety_radius_m= self._safety_radius_m,
-            transform= self._transform)
+        if self._cbf_type == self.dof4_cbf:
+            self._cbf = CBF_4DOF(
+                safety_radius_m= self._safety_radius_m,
+                transform= self._transform,
+                k2=0.5,
+                k3=0.5,
+                t_tot=self.prediction_t
+                )
+        else:
+            self._cbf = CBF(
+                safety_radius_m= self._safety_radius_m,
+                transform= self._transform,
+                t_tot=self.prediction_t
+                )
     
     def update_gunnerus_data(self, data): 
         if self.dummy_gunnerus is not None:

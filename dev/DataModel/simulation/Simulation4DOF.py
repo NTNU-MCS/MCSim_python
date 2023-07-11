@@ -174,7 +174,6 @@ class Simulation4DOF(SimulationServer):
         simulationStart = time() 
         for i1, t in enumerate(tvec):
             #store results 
-            if (t>90): thrust_state = np.array([30 * math.pi/180,self.revs])
             x_out[:,i1] = x 
             u = thrust_state
             #time integration
@@ -184,7 +183,7 @@ class Simulation4DOF(SimulationServer):
         #sort output 
         out=x_out[0:6,:]
         self.eta = x[0:4] 
-        self.nu = x[4:8]  
+        self.nu = x[4:8]
         return out, timestamps
 
     def check_incoming_controls(self):
