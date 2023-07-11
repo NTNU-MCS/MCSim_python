@@ -35,16 +35,16 @@ class SimulationManager():
         has_data = (prop in msg_keys)
         return has_data
     
-    def _format_init(self, msg):
+    def _format_init(self, msg, head):
         revs = self.rvg_init['revs']
         azi = self.rvg_init['azi_d']
         msg = self.SimulationServer.rvg_state 
         msg['lat'] = float(msg['lat'])
         msg['lon'] = float(msg['lon'])
-        msg['true_course'] = float(msg['true_course'])
+        msg['true_course'] = float(head)
         msg['spd_over_grnd'] = float(msg['spd_over_grnd'])
         msg['azi_d'] = azi
-        msg['revs'] = revs
+        msg['revs'] = revs 
         return msg
 
     def start_sim(self):
@@ -66,7 +66,7 @@ class SimulationManager():
             if has_new_msg and self.websocket.received_data['data_mode'] != self.mode:
                 mode = self.websocket.received_data['data_mode']
                 if (mode == self.mode_4dof and self.mode == self.mode_rt):
-                    self.rvg_init = self._format_init(self.SimulationServer.rvg_state)  
+                    self.rvg_init = self._format_init(self.SimulationServer.rvg_state, self.SimulationServer.rvg_heading)  
                 
                 print('switching')
                 self.mode = self.websocket.received_data['data_mode']

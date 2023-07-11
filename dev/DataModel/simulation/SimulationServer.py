@@ -30,6 +30,7 @@ class SimulationServer:
         self._predicted_interval = predicted_interval 
         self._butter_b, self._butter_a = butter(filt_order, filt_cutfreq/filt_nyqfreq, btype='low')
         self.rvg_state = {}
+        self.rvg_heading = None
 
         if address is not None:
             self._ip = address[0]
@@ -247,6 +248,10 @@ class SimulationServer:
                                             "content": msg
                                             },default=str)
                     self.websocket.send(json_msg) 
+
+                if message["message_id"]=="$PSIMSNS_ext":
+                    self.rvg_heading = message['head_deg']
+                    
 
                 if message["message_id"]=="$GPRMC_ext": 
                     self._colav_manager.update_gunnerus_data(message)
