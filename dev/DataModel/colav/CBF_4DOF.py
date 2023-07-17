@@ -52,7 +52,7 @@ class CBF_4DOF(CBF):
         
         return ad
 
-    def _process_data(self, p ,u ,z ,tq, po, zo, uo):  
+    def _process_data(self, p ,u ,z ,tq, po, zo, uo, ret_var):  
         self._running = True
         start_time = time()
         maneuver_start = None
@@ -100,11 +100,13 @@ class CBF_4DOF(CBF):
                     maneuver_start = t * self._dt
             
             azi = self._get_azi(x[8],rd, azi)  
-            thrust_state = np.array([azi,revs])
+            thrust_state = [azi,revs]
             Fw = np.zeros(4)
             x = model.int_RVGMan4(x, thrust_state, Fw, self.parV, self.parA, parS)
-            p = np.array([[x[1]], [x[0]]])  
-            z = np.array([[math.sin(x[3])], [math.cos(x[3])]]) ##double check
+            p[0,0] = x[1] 
+            p[1,0] = x[0]
+            z[0,0] = math.sin(x[3])
+            z[1,0] = math.cos(x[3])
             z = z/np.linalg.norm(z)  
 
         if maneuver_start is not None:
@@ -115,4 +117,5 @@ class CBF_4DOF(CBF):
             "p": h_p,
             "maneuver_start" : start_maneuver_at
                     } 
+        ret_var.put(cbf_data) 
         return cbf_data

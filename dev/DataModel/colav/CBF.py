@@ -57,7 +57,7 @@ class CBF:
         rd = (-self._k1 * z_tilde[1]) / math.sqrt(1 - self._lam**2 * z_tilde[0]**2)
         return rd
 
-    def _process_data(self, p ,u ,z ,tq, po, zo, uo):  
+    def _process_data(self, p ,u ,z ,tq, po, zo, uo, ret_var):  
         self._running = True
         start_time = time()
         maneuver_start = None
@@ -110,6 +110,7 @@ class CBF:
             "p": h_p,
             "maneuver_start" : start_maneuver_at
                     }
+        ret_var.put(cbf_data) 
         return cbf_data
     
     def convert_data(self, cbf_data):

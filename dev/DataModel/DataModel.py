@@ -2,10 +2,7 @@ from threading import Thread
 from parsers.StreamParser import StreamParser
 from parsers.LogParser import LogParser
 from loggers.FastLogger import FastLogger
-from loggers.DataLogger import DataLogger  
-from simulation.SimulationServer import SimulationServer
-from simulation.SimulationServerReplay import SimulationServerReplay
-from simulation.Simulation4DOF import Simulation4DOF
+from loggers.DataLogger import DataLogger   
 from simulation.SimulationTransform import SimulationTransform
 from colav.ColavManager import ColavManager
 from simulation.SimulationManager import SimulationManager
@@ -18,10 +15,9 @@ import socket
 import easygui
 
 class DataModel:
-    def __init__(self, log_file=None):
+    def __init__(self, colav_manager = ColavManager, websocket = DashboardWebsocket ,log_file=None):
         #Todo: add flush() functionality across related classes to purge data 
         #and prevent stack overflow / slowdown over extended use 
-        self.gunnerus_mmsi = '258342000'
         self.abs_path = pathlib.Path(__file__).parent.resolve()
         #global: fagitrelay.it.ntnu.no
         #local: gunnerus.local
@@ -39,10 +35,10 @@ class DataModel:
         self.log_name = './datastream_'+ self.date_time + '_' + str(self.log_time) + 's.txt'
         self.log_path = os.path.join(self.abs_path, 'DataStreams', self.log_name)
         self.log_stream = (self.log_path, self.log_time, self.save_logs)
-
+        self.Colav_Manager = colav_manager
         self.key_path = os.path.join(self.abs_path, 'nmeatools')
         self.UDP_Decrypter = Decrypter(key_path = self.key_path)
-
+        self.websocket = websocket
         # if True a log can be selected and used as the data source
         self.parse_saved_log = False 
         self.drop_ais_message = False
@@ -129,18 +125,16 @@ class DataModel:
         self.local_address = (socket.gethostname(), 5000) 
         self.sc_buffer_sz = 1024
         self.distance_filter = 1
-        self.ws_enable= True
-        self.ws_address= "ws://127.0.0.1:8000"
-        self.websocket = DashboardWebsocket(self.ws_address, self.ws_enable)
+
         self.dummy_gunnerus = {
             'lat': 6326.3043,
             'lat_dir': 'E',
             'lon': 1024.5395,
             'lon_dir': 'N',
-            'true_course': 40,
+            'true_course': -40,
             'spd_over_grnd': 0,
             'revs': 100,
-            'azi_d': 10,
+            'azi_d': 0,
             }
         
         self.dummy_vessel = {
@@ -153,20 +147,6 @@ class DataModel:
             'message_id': "!AI_ext_dummy",
             'pos_history': [[10.482652, 63.473148]],
             }
-        
-        self.Colav_Manager = ColavManager(
-            enable=True, 
-            update_interval=10,
-            websocket=self.websocket,
-            gunnerus_mmsi = self.gunnerus_mmsi,
-            dummy_gunnerus= None,
-            dummy_vessel= None,
-            safety_radius_m=200,
-            safety_radius_tol=1.5,
-            max_d_2_cpa=2000,
-            print_comp_t=True,
-            prediction_t=300
-            )
         
         self.run4DOFSim = True
 
@@ -198,20 +178,20 @@ class DataModel:
         self.thread_udp_stream = Thread(target=self.UDP_Stream.start) 
         self.thread_log_data = Thread(target=self.UDP_DataLogger.start)
         self.thread_sim_manager = Thread(target=self.SimulationManager.start) 
-        self.thread_colav_manager = Thread(target=self.Colav_Manager.start)
+        # self.thread_colav_manager = Thread(target=self.Colav_Manager.start)
 
     def start(self):
-        if self.ws_enable:
+        if self.websocket.enable:
             self.thread_websocket_receive.start()
         self.thread_udp_stream.start()
         self.thread_log_data.start()
         self.thread_sim_manager.start()
-        self.thread_colav_manager.start() 
+        # self.thread_colav_manager.start() 
 
     def stop(self): 
         self.UDP_Stream.stop()
         self.UDP_DataLogger.stop() 
         self.SimulationManager.stop()
-        self.Colav_Manager.stop()
+        # self.Colav_Manager.stop()
         self.websocket.close()
         print('Exiting...') 
