@@ -15,6 +15,7 @@ ws_address= "ws://127.0.0.1:8000"
 websocket = DashboardWebsocket(ws_address, ws_enable)
 gunnerus_mmsi = '258342000'
 
+#Initialize ColavManager
 Colav_Manager = ColavManager(
                 enable=True, 
                 update_interval=10,
@@ -29,6 +30,7 @@ Colav_Manager = ColavManager(
                 prediction_t=300
                 )
 
+#Initialize DataModel
 if args.file:
         GunnerusData = DataModel(
                 websocket=websocket,
@@ -45,6 +47,7 @@ if __name__ == '__main__':
         process_cbf_data = Colav_Manager._cbf._process_data
         ctx = get_context('spawn')
         q = ctx.Queue() 
+
         try:
                 GunnerusData.start() 
                 Colav_Manager.start()
@@ -55,6 +58,8 @@ if __name__ == '__main__':
                                 start = time()
                                 if (Colav_Manager.update()): 
                                         p, u, z, tq, po, zo, uo = Colav_Manager.sort_cbf_data() 
+
+                                        #CBF computation is run in a separate process
                                         cbf_process = Process(target=process_cbf_data, args=(p, u, z, tq, po, zo, uo, q))
                                         cbf_process.start()
                                         ret_var = q.get()

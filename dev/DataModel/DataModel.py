@@ -19,11 +19,13 @@ class DataModel:
         #Todo: add flush() functionality across related classes to purge data 
         #and prevent stack overflow / slowdown over extended use 
         self.abs_path = pathlib.Path(__file__).parent.resolve()
+
+        #Settings/address for gunnerus datastream
         #global: fagitrelay.it.ntnu.no
         #local: gunnerus.local
         self.address = ("fagitrelay.it.ntnu.no", 25508)
         self.buffer_size = 4096
-        self.loop_limit = 1
+        self.loop_limit = 1 
         self.log_file = log_file
         #raw_verbose, tag_verbose, unparsed_tag_verbose,
         #parsed_message_verbose, parse_error_verbose
@@ -48,10 +50,11 @@ class DataModel:
             self.parse_saved_log = True 
             self.load_path = self.log_file
         
-        # filter for messages
+        # filter for messages: mesages not including these strings are dropped
         self.prefixFilter = ['$PSIMSNS', '!AI', '$GPGGA', '$GPRMC']
         self.suffixFilter = '_ext'
 
+        #Select and initialize parser
         if self.parse_saved_log:
             if self.log_file is None:
                 self.load_path = easygui.fileopenbox()
@@ -73,7 +76,8 @@ class DataModel:
                 drop_ais_messages=self.drop_ais_message,
                 prefixFilter=self.prefixFilter,
                 suffixFilter=self.suffixFilter)
-
+            
+        #Initialize Data Logger
         self.simulation_origo_offset = ( 
             10.3929167,   #lon offset
             63.435166667, #lat offset
@@ -103,6 +107,7 @@ class DataModel:
 
         self.saveIncomingData = False
 
+        #These should be two separate, concurrent, components.
         if (not self.saveIncomingData):
             self.UDP_DataLogger = FastLogger(
                 stream_parser=self.UDP_Stream,
@@ -121,11 +126,13 @@ class DataModel:
                 frame_transform=self.UDP_Sim_Frame_transform,
                 verbose=self.dl_verbose
                 )
-        
+            
+        #Initialize Simulation Manager
         self.local_address = (socket.gethostname(), 5000) 
         self.sc_buffer_sz = 1024
         self.distance_filter = 1
 
+        #dummy_gunnerus is now the origin for 4dof sim
         self.dummy_gunnerus = {
             'lat': 6326.3043,
             'lat_dir': 'E',
@@ -166,6 +173,7 @@ class DataModel:
             mode = '4dof'
             )
 
+        # Select 'Simulation' source: saved log, 4dof, or rt
         if (self.parse_saved_log): 
             self.SimulationManager.set_simulation_type(self.SimulationManager.mode_replay)            
         elif (self.run4DOFSim): 
